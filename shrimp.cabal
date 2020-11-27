@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Grammar
+      Interpreter
+      Lib
   other-modules:
       Paths_shrimp
   hs-source-dirs:

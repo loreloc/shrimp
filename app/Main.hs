@@ -8,5 +8,5 @@ import Grammar
 
 main :: IO ()
 main = do
-    let p = Program [IntegerDecl "ciao" (Constant 1816)] (Assignment "ciao" (Constant 42))
+    let p = Program [IntegerDecl "ciao" (Constant 1816)] [Assignment "ciao" (Constant 42)]
     print p

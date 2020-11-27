@@ -18,10 +18,9 @@ module Grammar where
 -- VariableDecl ::= Type Identifier ";"
 -- Command ::= {Assignment | Sequence | Branch} ";"
 -- Assignment ::= "let" Identifier "=" ArithmeticExpr
--- Sequence ::= Command [Command]*
--- Branch ::= "if" "(" BooleanExpr ")" "then" Command "else" Command "end if"
--- Loop ::= "while" "(" BooleanExpr ")" "do" Command "end loop"
--- Program ::= "shrimp" [VariableDecl]* Sequence
+-- Branch ::= "if" "(" BooleanExpr ")" "then" [Command]* "else" [Command]* "end if"
+-- Loop ::= "while" "(" BooleanExpr ")" "do" [Command]* "end loop"
+-- Program ::= "shrimp" [VariableDecl]* [Command]*
 
 data ArithmeticExpr
     -- |Addition between sub-expressions
@@ -58,17 +57,17 @@ data VariableDecl
 
 -- |Commands declaration
 data Command
+    -- |Skip
+    = Skip
     -- |Assignment
-    = Assignment String ArithmeticExpr
-    -- |Sequence
-    | Sequence [Command]
+    | Assignment String ArithmeticExpr
     -- |Branch command
-    | Branch BooleanExpr Command Command
+    | Branch BooleanExpr [Command] [Command]
     -- |Loop command
-    | Loop BooleanExpr Command
+    | Loop BooleanExpr [Command]
     deriving(Show)
 
 -- |Program declaration
 data Program
-    = Program [VariableDecl] Command
+    = Program [VariableDecl] [Command]
     deriving(Show)
