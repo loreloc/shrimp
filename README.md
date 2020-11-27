@@ -1,2 +1,2 @@
 # shrimp
-![shrimp.logo](shrimp.log)
+![shrimp.logo](logo.png)
