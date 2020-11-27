@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         shrIMP, a simple imperative programming language written in Haskell
+description:         shrimp, a simple imperative programming language written in Haskell
 
 dependencies:
 - base >= 4.7 && < 5

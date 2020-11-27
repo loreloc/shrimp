@@ -1,1 +1,1 @@
-# shrIMP
+# shrimp
