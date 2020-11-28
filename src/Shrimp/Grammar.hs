@@ -1,4 +1,4 @@
-module Grammar where
+module Shrimp.Grammar where
 
 -- Shrimp EBNF
 -- Type ::= "int"
@@ -16,7 +16,7 @@ module Grammar where
 --               | ArithmeticExpr "eq" ArithmeticExpr
 --               | ArithmeticExpr "leq" ArithmeticExpr
 -- VariableDecl ::= Type Identifier ";"
--- Command ::= {Assignment | Sequence | Branch} ";"
+-- Command ::= {Assignment | Branch | Loop} ";"
 -- Assignment ::= "let" Identifier "=" ArithmeticExpr
 -- Branch ::= "if" "(" BooleanExpr ")" "then" [Command]* "else" [Command]* "end if"
 -- Loop ::= "while" "(" BooleanExpr ")" "do" [Command]* "end loop"

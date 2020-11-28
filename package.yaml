@@ -17,16 +17,18 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         shrimp, a simple imperative programming language written in Haskell
+description:         Shrimp, a very nice imperative programming language written in Haskell
 
 dependencies:
 - base >= 4.7 && < 5
 
 library:
   source-dirs: src
+  ghc-options:
+    - -Wall
 
 executables:
-  shrimp-exe:
+  shrimp:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

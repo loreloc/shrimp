@@ -6,7 +6,7 @@ cabal-version: 1.12
 
 name:           shrimp
 version:        0.1.0.0
-description:    shrIMP, a simple imperative programming language written in Haskell
+description:    Shrimp, a very nice imperative programming language written in Haskell
 homepage:       https://github.com/loreloc/shrimp#readme
 bug-reports:    https://github.com/loreloc/shrimp/issues
 author:         Lorenzo Loconte
@@ -25,18 +25,20 @@ source-repository head
 
 library
   exposed-modules:
-      Grammar
-      Interpreter
       Lib
+      Shrimp.Exception
+      Shrimp.Grammar
+      Shrimp.Interpreter
   other-modules:
       Paths_shrimp
   hs-source-dirs:
       src
+  ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable shrimp-exe
+executable shrimp
   main-is: Main.hs
   other-modules:
       Paths_shrimp
