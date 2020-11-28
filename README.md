@@ -1,2 +1,2 @@
-# shrimp
+# Shrimp
 ![shrimp.logo](logo.png)
