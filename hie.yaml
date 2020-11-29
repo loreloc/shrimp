@@ -1,2 +1,7 @@
 cradle:
   stack:
+    - path: "./app"
+      component: "shrimp:exe:shrimp"
+
+    - path: "./test"
+      component: "shrimp:test:shrimp-test"

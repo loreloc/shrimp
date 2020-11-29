@@ -1,3 +1,3 @@
-# Changelog for shrimp
+# Changelog for Shrimp
 
 ## Unreleased changes

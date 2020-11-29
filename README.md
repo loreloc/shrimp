@@ -1,2 +1,2 @@
 # Shrimp
-![shrimp.logo](logo.png)
+<img src="logo.svg" width=50%>

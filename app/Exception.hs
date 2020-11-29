@@ -1,4 +1,4 @@
-module Shrimp.Exception where
+module Exception where
 
 import Text.Printf
 import Control.Exception

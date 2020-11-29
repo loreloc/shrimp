@@ -1,6 +1,6 @@
 module Main where
 
-import Shrimp.Grammar
+import Grammar
     ( Program(Program),
       Command(Assignment),
       VariableDecl(IntegerDecl),

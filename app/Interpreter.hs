@@ -1,8 +1,8 @@
-module Shrimp.Interpreter where
+module Interpreter where
 
 import Control.Exception
-import Shrimp.Exception
-import Shrimp.Grammar
+import Exception
+import Grammar
     ( ArithmeticExpr(Add, Sub, Mul, Constant, Identifier),
       BooleanExpr(Boolean, Not, Or, And, Equal, LessEqual),
       VariableDecl(IntegerDecl),

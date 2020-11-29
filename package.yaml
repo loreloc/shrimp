@@ -22,11 +22,6 @@ description:         Shrimp, a very nice imperative programming language written
 dependencies:
 - base >= 4.7 && < 5
 
-library:
-  source-dirs: src
-  ghc-options:
-    - -Wall
-
 executables:
   shrimp:
     main:                Main.hs
@@ -35,8 +30,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - shrimp
+    - -Wall
 
 tests:
   shrimp-test:
@@ -46,5 +40,3 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - shrimp

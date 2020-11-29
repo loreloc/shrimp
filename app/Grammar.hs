@@ -1,4 +1,4 @@
-module Shrimp.Grammar where
+module Grammar where
 
 -- Shrimp EBNF
 -- Type ::= "int"
