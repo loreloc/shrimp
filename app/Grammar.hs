@@ -20,7 +20,7 @@ module Grammar where
 -- Assignment ::= "let" Identifier "=" ArithmeticExpr
 -- Branch ::= "if" "(" BooleanExpr ")" "then" [Command]* "else" [Command]* "end if"
 -- Loop ::= "while" "(" BooleanExpr ")" "do" [Command]* "end loop"
--- Program ::= "shrimp" [VariableDecl]* [Command]*
+-- Program ::= "shrimp" [VariableDecl]* "begin" [Command]* "end"
 
 data ArithmeticExpr
     -- |Addition between sub-expressions
