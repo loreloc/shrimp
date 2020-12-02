@@ -26,6 +26,7 @@ source-repository head
 executable shrimp
   main-is: Main.hs
   other-modules:
+      Dictionary
       Exception
       Grammar
       Interpreter
