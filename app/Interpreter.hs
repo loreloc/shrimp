@@ -84,7 +84,7 @@ executeCommands s ((Branch b cs' cs'') : cs) =
         Error e -> throw e
 executeCommands s ((Loop b cs') : cs) =
     case evalBoolean s b of
-        Ok True -> executeCommands s' ((Loop b cs') : cs)
+        Ok True -> executeCommands s' (Loop b cs' : cs)
             where s' = executeCommands s cs'
         Ok False -> executeCommands s cs
         Error e -> throw e
