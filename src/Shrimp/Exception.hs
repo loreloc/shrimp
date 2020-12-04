@@ -1,4 +1,4 @@
-module Exception where
+module Shrimp.Exception where
 
 import Control.Applicative
   ( Applicative (liftA2),

@@ -1,4 +1,4 @@
-module Grammar where
+module Shrimp.Grammar where
 
 data ArithmeticExpr
   = -- | Addition between sub-expressions

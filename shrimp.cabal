@@ -23,12 +23,23 @@ source-repository head
   type: git
   location: https://github.com/loreloc/shrimp
 
-executable shrimp
+library
+  exposed-modules:
+      Shrimp.Exception
+      Shrimp.Grammar
+      Shrimp.Interpreter
+  other-modules:
+      Paths_shrimp
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6.2
+  default-language: Haskell2010
+
+executable shrimp-exe
   main-is: Main.hs
   other-modules:
-      Exception
-      Grammar
-      Interpreter
       Paths_shrimp
   hs-source-dirs:
       app
@@ -36,12 +47,14 @@ executable shrimp
   build-depends:
       base >=4.7 && <5
     , containers >=0.6.2
+    , shrimp
   default-language: Haskell2010
 
 test-suite shrimp-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Factorial
       Paths_shrimp
   hs-source-dirs:
       test
@@ -49,4 +62,5 @@ test-suite shrimp-test
   build-depends:
       base >=4.7 && <5
     , containers >=0.6.2
+    , shrimp
   default-language: Haskell2010

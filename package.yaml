@@ -23,8 +23,11 @@ dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6.2
 
+library:
+  source-dirs: src
+
 executables:
-  shrimp:
+  shrimp-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -32,6 +35,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
+    dependencies:
+    - shrimp
 
 tests:
   shrimp-test:
@@ -41,3 +46,5 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    dependencies:
+    - shrimp

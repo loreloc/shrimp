@@ -1,4 +1,4 @@
-module Interpreter where
+module Shrimp.Interpreter where
 
 import Control.Applicative
   ( Applicative (liftA2),
@@ -14,11 +14,11 @@ import qualified Data.Map as Map
     insert,
     lookup,
   )
-import Exception
+import Shrimp.Exception
   ( Result (Error, Ok),
     RuntimeException (MultipleDeclaration, UndeclaredVariable),
   )
-import Grammar
+import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
     BooleanExpr (And, Boolean, Equal, LessEqual, Not, Or),
     Command (Assignment, Branch, Loop, Skip),

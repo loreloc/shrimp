@@ -1,13 +1,13 @@
 module Main where
 
-import Grammar
+import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul),
     BooleanExpr (LessEqual),
     Command (Assignment, Loop),
     Program (Program),
     VariableDecl (IntegerDecl),
   )
-import Interpreter
+import Shrimp.Interpreter
   ( emptyState,
     execute,
   )
