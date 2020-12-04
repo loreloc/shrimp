@@ -1,7 +1,7 @@
 cradle:
   stack:
     - path: "./src"
-    component: "shrimp:lib"
+      component: "shrimp:lib"
 
     - path: "./app"
       component: "shrimp:exe:shrimp-exe"
