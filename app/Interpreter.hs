@@ -6,7 +6,14 @@ import Control.Applicative
 import Control.Exception
   ( throw,
   )
-import Dictionary (Dictionary, empty, insert, search)
+import Data.Map
+  ( Map,
+  )
+import qualified Data.Map as Map
+  ( empty,
+    insert,
+    lookup,
+  )
 import Exception
   ( Result (Error, Ok),
     RuntimeException (MultipleDeclaration, UndeclaredVariable),
@@ -20,17 +27,17 @@ import Grammar
   )
 
 -- | The state (memory) of the interpreter
-type State = Dictionary String Int
+type State = Map String Int
 
 -- | Create an empty state
 emptyState :: State
-emptyState = empty
+emptyState = Map.empty
 
 -- | Evaluate an arithmetic expression given a state
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
 evalArithmetic s (Identifier d) =
-  case search s d of
+  case Map.lookup d s of
     Just v -> Ok v
     Nothing -> Error (UndeclaredVariable d)
 evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
@@ -86,11 +93,11 @@ executeCommands :: State -> [Command] -> State
 executeCommands s [] = s
 executeCommands s (Skip : cs) = executeCommands s cs
 executeCommands s ((Assignment d a) : cs) =
-  case search s d of
+  case Map.lookup d s of
     Just _ -> case evalArithmetic s a of
       Ok v -> executeCommands s' cs
         where
-          s' = insert s d v
+          s' = Map.insert d v s
       Error e -> throw e
     Nothing -> throw (UndeclaredVariable d)
 executeCommands s ((Branch b cs' cs'') : cs) =
@@ -109,8 +116,8 @@ executeCommands s ((Loop b cs') : cs) =
 -- | Augment a state by declaring a variable
 augmentState :: State -> VariableDecl -> State
 augmentState s (IntegerDecl d a) =
-  case search s d of
+  case Map.lookup d s of
     Just _ -> throw (MultipleDeclaration d)
     Nothing -> case evalArithmetic s a of
-      Ok v -> insert s d v
+      Ok v -> Map.insert d v s
       Error e -> throw e
