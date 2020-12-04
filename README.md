@@ -19,9 +19,9 @@ BooleanExpr ::= True | False
               | BooleanExpr "and" BooleanExpr
               | ArithmeticExpr "eq" ArithmeticExpr
               | ArithmeticExpr "leq" ArithmeticExpr
-VariableDecl ::= Type Identifier ";"
+VariableDecl ::= "let" Identifier "of" Type ";"
 Command ::= {Assignment | Branch | Loop} ";"
-Assignment ::= "let" Identifier "=" ArithmeticExpr
+Assignment ::= Identifier "=" ArithmeticExpr
 Branch ::= "if" "(" BooleanExpr ")" "then" [Command]* "else" [Command]* "end if"
 Loop ::= "while" "(" BooleanExpr ")" "do" [Command]* "end loop"
 Program ::= "shrimp" [VariableDecl]* "begin" [Command]* "end"
