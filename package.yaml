@@ -22,7 +22,6 @@ description:         Shrimp, a very nice imperative programming language written
 dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6.2
-- HUnit >= 1.6.1
 
 library:
   source-dirs: src
@@ -49,3 +48,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - shrimp
+    - HUnit >= 1.6.1

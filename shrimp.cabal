@@ -33,8 +33,7 @@ library
   hs-source-dirs:
       src
   build-depends:
-      HUnit >=1.6.1
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers >=0.6.2
   default-language: Haskell2010
 
@@ -46,8 +45,7 @@ executable shrimp-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
-      HUnit >=1.6.1
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers >=0.6.2
     , shrimp
   default-language: Haskell2010
