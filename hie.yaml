@@ -4,7 +4,7 @@ cradle:
       component: "shrimp:lib"
 
     - path: "./app"
-      component: "shrimp:exe:shrimp-exe"
+      component: "shrimp:exe:shrimp"
 
     - path: "./test"
       component: "shrimp:test:shrimp-test"

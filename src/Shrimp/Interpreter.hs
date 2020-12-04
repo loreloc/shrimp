@@ -1,22 +1,9 @@
 module Shrimp.Interpreter where
 
-import Control.Applicative
-  ( Applicative (liftA2),
-  )
-import Control.Exception
-  ( throw,
-  )
-import Data.Map
-  ( Map,
-  )
-import qualified Data.Map as Map
-  ( empty,
-    insert,
-    lookup,
-  )
 import Shrimp.Exception
   ( Result (Error, Ok),
     RuntimeException (MultipleDeclaration, UndeclaredVariable),
+    exception,
   )
 import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
@@ -25,30 +12,28 @@ import Shrimp.Grammar
     Program (Program),
     VariableDecl (IntegerDecl),
   )
-
--- | The state (memory) of the interpreter
-type State = Map String Int
-
--- | Create an empty state
-emptyState :: State
-emptyState = Map.empty
+import Shrimp.State
+  ( State,
+    insert,
+    search,
+  )
 
 -- | Evaluate an arithmetic expression given a state
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
 evalArithmetic s (Identifier d) =
-  case Map.lookup d s of
+  case search d s of
     Just v -> Ok v
     Nothing -> Error (UndeclaredVariable d)
-evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
+evalArithmetic s (Add a1 a2) = (+) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Sub a1 a2) = liftA2 (-) v1 v2
+evalArithmetic s (Sub a1 a2) = (-) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Mul a1 a2) = liftA2 (*) v1 v2
+evalArithmetic s (Mul a1 a2) = (*) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
@@ -57,19 +42,19 @@ evalArithmetic s (Mul a1 a2) = liftA2 (*) v1 v2
 evalBoolean :: State -> BooleanExpr -> Result Bool
 evalBoolean _ (Boolean t) = Ok t
 evalBoolean s (Not b) = not <$> evalBoolean s b
-evalBoolean s (Or b1 b2) = liftA2 (||) t1 t2
+evalBoolean s (Or b1 b2) = (||) <$> t1 <*> t2
   where
     t1 = evalBoolean s b1
     t2 = evalBoolean s b2
-evalBoolean s (And b1 b2) = liftA2 (&&) t1 t2
+evalBoolean s (And b1 b2) = (&&) <$> t1 <*> t2
   where
     t1 = evalBoolean s b1
     t2 = evalBoolean s b2
-evalBoolean s (Equal a1 a2) = liftA2 (==) v1 v2
+evalBoolean s (Equal a1 a2) = (==) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (LessEqual a1 a2) = liftA2 (<=) v1 v2
+evalBoolean s (LessEqual a1 a2) = (<=) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
@@ -93,31 +78,31 @@ executeCommands :: State -> [Command] -> State
 executeCommands s [] = s
 executeCommands s (Skip : cs) = executeCommands s cs
 executeCommands s ((Assignment d a) : cs) =
-  case Map.lookup d s of
+  case search d s of
     Just _ -> case evalArithmetic s a of
       Ok v -> executeCommands s' cs
         where
-          s' = Map.insert d v s
-      Error e -> throw e
-    Nothing -> throw (UndeclaredVariable d)
+          s' = insert d v s
+      Error e -> exception e
+    Nothing -> exception (UndeclaredVariable d)
 executeCommands s ((Branch b cs' cs'') : cs) =
   case evalBoolean s b of
     Ok True -> executeCommands s (cs' ++ cs)
     Ok False -> executeCommands s (cs'' ++ cs)
-    Error e -> throw e
+    Error e -> exception e
 executeCommands s ((Loop b cs') : cs) =
   case evalBoolean s b of
     Ok True -> executeCommands s' (Loop b cs' : cs)
       where
         s' = executeCommands s cs'
     Ok False -> executeCommands s cs
-    Error e -> throw e
+    Error e -> exception e
 
 -- | Augment a state by declaring a variable
 augmentState :: State -> VariableDecl -> State
 augmentState s (IntegerDecl d a) =
-  case Map.lookup d s of
-    Just _ -> throw (MultipleDeclaration d)
+  case search d s of
+    Just _ -> exception (MultipleDeclaration d)
     Nothing -> case evalArithmetic s a of
-      Ok v -> Map.insert d v s
-      Error e -> throw e
+      Ok v -> insert d v s
+      Error e -> exception e

@@ -1,7 +1,4 @@
-import qualified Data.Map as Map
-  ( lookup,
-  )
-import Data.Maybe ( fromJust, isJust )
+import Data.Maybe (fromJust, isJust)
 import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul),
     BooleanExpr (LessEqual),
@@ -10,15 +7,12 @@ import Shrimp.Grammar
     VariableDecl (IntegerDecl),
   )
 import Shrimp.Interpreter
-  ( emptyState,
-    execute,
+  ( execute,
   )
-import Test.HUnit
-    ( assertBool,
-      assertEqual,
-      runTestTT,
-      Counts,
-      Test(TestList, TestCase) )
+import Shrimp.State
+  ( empty,
+    search,
+  )
 
 programFactorial :: Program
 programFactorial =
@@ -34,16 +28,17 @@ programFactorial =
         ]
     ]
 
-testFactorial :: Test
-testFactorial =
-  TestCase
-    ( do
-        let s = execute emptyState programFactorial
-        let v = Map.lookup "x" s
-        assertBool "Factorial - result is undefined" (isJust v)
-        assertEqual "Factorial - result mismatch" (fromJust v) 120
-    )
+testFactorial :: IO ()
+testFactorial = do
+  let s = execute empty programFactorial
+  let v = search "x" s
+  if isJust v
+    then
+      if fromJust v == 120
+        then print "Factorial - passed"
+        else error "Factorial - result mismatch"
+    else error "Factorial - undefined result"
 
-main :: IO Counts
+main :: IO ()
 main = do
-  runTestTT (TestList [testFactorial])
+  testFactorial
