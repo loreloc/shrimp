@@ -73,10 +73,5 @@ execute s ((Branch b cs' cs'') : cs) =
     Ok True -> execute s (cs' ++ cs)
     Ok False -> execute s (cs'' ++ cs)
     Error e -> exception e
-execute s ((Loop b cs') : cs) =
-  case evalBoolean s b of
-    Ok True -> execute s' (Loop b cs' : cs)
-      where
-        s' = execute s cs'
-    Ok False -> execute s cs
-    Error e -> exception e
+execute s (lc@(Loop b cs') : cs) =
+  execute s (Branch b (cs' ++ [lc]) [Skip] : cs)
