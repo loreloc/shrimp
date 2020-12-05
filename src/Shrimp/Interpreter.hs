@@ -12,7 +12,7 @@ import Shrimp.Grammar
     Command (Assignment, Branch, Loop, Skip),
   )
 import Shrimp.State
-  ( State,
+  ( State (..),
     insert,
     search,
   )
@@ -73,5 +73,5 @@ execute s ((Branch b cs' cs'') : cs) =
     Ok True -> execute s (cs' ++ cs)
     Ok False -> execute s (cs'' ++ cs)
     Error e -> exception e
-execute s (lc@(Loop b cs') : cs) =
-  execute s (Branch b (cs' ++ [lc]) [Skip] : cs)
+execute s (c@(Loop b cs') : cs) =
+  execute s (Branch b (cs' ++ [c]) [Skip] : cs)

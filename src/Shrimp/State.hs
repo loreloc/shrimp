@@ -13,7 +13,7 @@ search _ (State []) = Nothing
 search d (State ((d', v) : ss)) =
   if d == d' then Just v else search d (State ss)
 
--- | Insert (or modification) of a variable in a state
+-- | Insert of a variable in a state
 insert :: String -> Int -> State -> State
 insert d v (State []) = State [(d, v)]
 insert d v (State ((d', v') : ss)) =
