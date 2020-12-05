@@ -28,11 +28,6 @@ data BooleanExpr
     LessEqual ArithmeticExpr ArithmeticExpr
   deriving (Show)
 
-data VariableDecl
-  = -- Integer variable declaration
-    IntegerDecl String ArithmeticExpr
-  deriving (Show)
-
 -- | Commands declaration
 data Command
   = -- | Skip
@@ -40,12 +35,10 @@ data Command
   | -- | Assignment
     Assignment String ArithmeticExpr
   | -- | Branch command
-    Branch BooleanExpr [Command] [Command]
+    Branch BooleanExpr Block Block
   | -- | Loop command
-    Loop BooleanExpr [Command]
+    Loop BooleanExpr Block
   deriving (Show)
 
--- | Program declaration
-data Program
-  = Program [VariableDecl] [Command]
-  deriving (Show)
+-- | Block declaration
+type Block = [Command]

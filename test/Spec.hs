@@ -3,8 +3,7 @@ import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul),
     BooleanExpr (LessEqual),
     Command (Assignment, Loop),
-    Program (Program),
-    VariableDecl (IntegerDecl),
+    Block
   )
 import Shrimp.Interpreter
   ( execute,
@@ -14,14 +13,12 @@ import Shrimp.State
     search,
   )
 
-programFactorial :: Program
+programFactorial :: Block
 programFactorial =
-  Program
-    [ IntegerDecl "i" (Constant 1),
-      IntegerDecl "n" (Constant 5),
-      IntegerDecl "x" (Constant 1)
-    ]
-    [ Loop
+    [ Assignment "i" (Constant 1),
+      Assignment "n" (Constant 5),
+      Assignment "x" (Constant 1),
+      Loop
         (LessEqual (Identifier "i") (Identifier "n"))
         [ Assignment "x" (Mul (Identifier "x") (Identifier "i")),
           Assignment "i" (Add (Identifier "i") (Constant 1))

@@ -3,8 +3,6 @@ module Shrimp.Exception where
 data RuntimeException
   = -- | Define an undeclared variable exception
     UndeclaredVariable String
-  | -- | Define a multiple declaration exception
-    MultipleDeclaration String
   deriving (Show)
 
 -- | Define a result data structure
