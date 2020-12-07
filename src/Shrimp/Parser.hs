@@ -254,8 +254,12 @@ booleanTerm = ap <|> booleanFactor
 booleanFactor :: Parser BooleanExpr
 booleanFactor = tp <|> fp <|> np <|> nested
   where
-    tp = Boolean <$> fmap (\cs -> read cs :: Bool) (keyword "True")
-    fp = Boolean <$> fmap (\cs -> read cs :: Bool) (keyword "False")
+    tp = do
+      keyword "true"
+      return (Boolean True)
+    fp = do
+      keyword "false"
+      return (Boolean False)
     np = do
       keyword "not"
       Not <$> booleanExpr
