@@ -127,10 +127,10 @@ isLetter c
   | otherwise = False
 
 -- | Parse a string
-parse :: String -> Block
+parse :: String -> (Block, String)
 parse cs = case unwrap program cs of
   [] -> errorWithoutStackTrace "parsing error"
-  [(b, _)] -> b
+  [(b, cs)] -> (b, cs)
 
 -- | Parse a program
 program :: Parser Block

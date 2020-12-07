@@ -1,0 +1,18 @@
+shrimp
+x = 10;
+y = 2;
+op = 0;
+result = 0;
+if (op eq 0) then
+    result = x + y;
+else
+    if (op eq 1) then
+        result = x - y;
+    else
+        if (op eq 2) then
+            result = x * y;
+        else
+            result = 0-999999;
+        end if;
+    end if;
+end if;

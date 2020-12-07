@@ -16,7 +16,9 @@ main = do
     then help
     else do
       source <- readFile $ head args
-      let program = Parser.parse source
-      let state = Interpreter.run program
-      print state
-      
+      let (program, message) = Parser.parse source
+      if null message
+        then do
+          let state = Interpreter.run program
+          print state
+        else print message
