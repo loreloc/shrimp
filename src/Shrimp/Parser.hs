@@ -56,8 +56,8 @@ item =
     )
 
 -- | Conditional function that consume a character
-sat :: (Char -> Bool) -> Parser Char
-sat p = do c <- item; if p c then return c else zero
+satisfy :: (Char -> Bool) -> Parser Char
+satisfy p = do c <- item; if p c then return c else zero
 
 -- | Many combinator that repeately applicate a parser
 many :: Parser a -> Parser [a]
@@ -71,24 +71,24 @@ chain p op x = do a <- p; rest a <|> return x
 
 -- | Parse spaces
 space :: Parser String
-space = many (sat isSpace)
+space = many $ satisfy isSpace
+
+-- | Parse an identifier
+identifier :: Parser String
+identifier = many $ satisfy isLetter
+
+-- | Parse a constant
+constant :: Parser Int
+constant = fmap (\s -> read s :: Int) (many $ satisfy isDigit)
 
 -- | Parse a specific character
 char :: Char -> Parser Char
-char c = sat (c ==)
+char c = satisfy (c ==)
 
--- | Parse string
-string :: String -> Parser String
-string "" = return ""
-string (c : cs) = do char c; string cs; return (c : cs)
-
--- | Parse a token
-token :: Parser a -> Parser a
-token p = do a <- p; space; return a
-
--- | Parse a symbolic token
-symbol :: String -> Parser String
-symbol cs = token (string cs)
+-- | Parse a keyword
+keyword :: String -> Parser String
+keyword [c] = do char c; return [c]
+keyword (c : cs) = do char c; keyword cs; return (c : cs)
 
 -- | Apply a parser, removing leading space
 apply :: Parser a -> String -> [(a, String)]
@@ -101,4 +101,16 @@ isSpace c
   | c == '\t' = True
   | c == '\r' = True
   | c == '\n' = True
+  | otherwise = False
+
+-- | Check whether a character is a digit
+isDigit :: Char -> Bool
+isDigit c = c `elem` ['0' .. '9']
+
+-- | Check whether a character is a letter or an underscore
+isLetter :: Char -> Bool
+isLetter c
+  | c `elem` ['a' .. 'z'] = True
+  | c `elem` ['A' .. 'Z'] = True
+  | c == '_' = True
   | otherwise = False

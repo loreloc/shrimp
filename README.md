@@ -7,7 +7,7 @@ The syntax for the programs written in `shrimp` is expressed using EBNF as follo
 ```ebnf
 Type ::= "int"
 Integer ::= [0-9]+
-Identifier ::= [a-zA-Z_][a-zA-Z_0-9]*
+Identifier ::= [a-zA-Z_]+
 ArithmeticExpr ::= Integer
                  | Identifier
                  | ArithmeticExpr "+" ArithmeticExpr
