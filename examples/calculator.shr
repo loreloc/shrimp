@@ -1,7 +1,7 @@
 shrimp
 x = 10;
 y = 2;
-op = 0;
+op = 1;
 result = 0;
 if (op eq 0) then
     result = x + y;
