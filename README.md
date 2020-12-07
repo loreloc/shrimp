@@ -13,7 +13,7 @@ ArithmeticExpr ::= Integer
                  | ArithmeticExpr "+" ArithmeticExpr
                  | ArithmeticExpr "-" ArithmeticExpr
                  | ArithmeticExpr "*" ArithmeticExpr
-BooleanExpr ::= True | False
+BooleanExpr ::= "True" | "False"
               | "not" BooleanExpr
               | BooleanExpr "or" BooleanExpr
               | BooleanExpr "and" BooleanExpr
