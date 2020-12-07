@@ -207,20 +207,28 @@ arithmeticFactor = cp <|> ip <|> nested
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
-booleanExpr = op <|> booleanTerm
+booleanExpr = op <|> lp <|> ep <|> booleanTerm
   where
     op = do
-      keyword "or"
       b <- booleanTerm
-      Or b <$> booleanExpr 
+      keyword "or"
+      Or b <$> booleanExpr
+    lp = do
+      a <- arithmeticExpr
+      keyword "leq"
+      LessEqual a <$> arithmeticExpr
+    ep = do
+      a <- arithmeticExpr
+      keyword "eq"
+      Equal a <$> arithmeticExpr
 
 -- | Parse a boolean term
 booleanTerm :: Parser BooleanExpr
 booleanTerm = ap <|> booleanFactor
   where
     ap = do
-      keyword "and"
       b <- booleanFactor
+      keyword "and"
       And b <$> booleanTerm
 
 -- | Parse a boolean factor
