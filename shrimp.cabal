@@ -28,6 +28,7 @@ library
       Shrimp.Exception
       Shrimp.Grammar
       Shrimp.Interpreter
+      Shrimp.Parser
       Shrimp.State
   other-modules:
       Paths_shrimp
