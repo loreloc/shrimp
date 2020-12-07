@@ -122,6 +122,10 @@ isLetter c
   | c == '_' = True
   | otherwise = False
 
+-- | Parse a string
+shrimp :: String -> Block
+shrimp cs = fst $ head $ parse block cs
+
 -- | Parse a command
 command :: Parser Command
 command = (assignment <|> branch <|> loop) `plus` semicolon
