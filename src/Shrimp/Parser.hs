@@ -124,7 +124,13 @@ isLetter c
 
 -- | Parse a string
 shrimp :: String -> Block
-shrimp cs = fst $ head $ parse block cs
+shrimp cs = fst $ head $ parse program cs
+
+-- | Parse a program
+program :: Parser Block
+program = do
+  keyword "shrimp"
+  many command
 
 -- | Parse a command
 command :: Parser Command
