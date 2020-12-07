@@ -21,7 +21,7 @@ BooleanExpr ::= "True" | "False"
               | ArithmeticExpr "leq" ArithmeticExpr
 Command ::= {Assignment | Branch | Loop} ";"
 Block ::= [Command]*
-Assignment ::= Identifier ":=" ArithmeticExpr
+Assignment ::= Identifier "=" ArithmeticExpr
 Branch ::= "if" "(" BooleanExpr ")" "then" Block "else" v "end if"
 Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while"
 Program ::= "shrimp" Block

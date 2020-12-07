@@ -101,10 +101,6 @@ keyword cs = token $ keyword' cs
 symbol :: Char -> Parser Char
 symbol c = token $ char c
 
--- | Apply a parser, removing leading space
-apply :: Parser a -> String -> [(a, String)]
-apply p = parse (do space; p)
-
 -- | Check whether a character is a space
 isSpace :: Char -> Bool
 isSpace c
@@ -125,6 +121,51 @@ isLetter c
   | c `elem` ['A' .. 'Z'] = True
   | c == '_' = True
   | otherwise = False
+
+-- | Parse a command
+command :: Parser Command
+command = (assignment <|> branch <|> loop) `plus` semicolon
+  where
+    semicolon = do
+      symbol ';'
+      return Skip
+
+-- | Parse a command block
+block :: Parser [Command]
+block = many command
+
+-- | Parse an assignment command
+assignment :: Parser Command
+assignment = do
+  d <- identifier
+  symbol '='
+  Assignment d <$> arithmeticExpr
+
+-- | Parse a branch command
+branch :: Parser Command
+branch = do
+  keyword "if"
+  symbol '('
+  b <- booleanExpr
+  symbol ')'
+  keyword "then"
+  c1 <- block
+  keyword "else"
+  c2 <- block
+  keyword "end if"
+  return (Branch b c1 c2)
+
+-- | Parse a loop command
+loop :: Parser Command
+loop = do
+  keyword "while"
+  symbol '('
+  b <- booleanExpr
+  symbol ')'
+  keyword "do"
+  c <- block
+  keyword "end while"
+  return (Loop b c)
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
