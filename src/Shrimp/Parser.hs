@@ -4,7 +4,7 @@ import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
     Block,
     BooleanExpr (And, Boolean, Equal, LessEqual, Not, Or),
-    Command (Assignment, Branch, Loop),
+    Command (Assignment, Branch, Loop, Skip),
   )
 
 -- | Define the parser type
@@ -17,7 +17,11 @@ unwrap (Parser p) = p
 -- | Define an augment monad class
 class Monad m => AugmentMonad m where
   zero :: m a
-  plus :: m a -> m a -> m a
+  (<|>) :: m a -> m a -> m a
+  many :: m a -> m [a]
+  some :: m a -> m [a]
+  many p = some p <|> pure []
+  some p = (:) <$> p <*> many p
 
 -- | Define the functor instance
 instance Functor Parser where
@@ -31,16 +35,15 @@ instance Functor Parser where
 -- | Define the applicative instance
 instance Applicative Parser where
   pure v = Parser (\cs -> [(v, cs)])
-  (<*>) (Parser f) p =
+  (<*>) p q =
     Parser
-      ( \cs -> case f cs of
+      ( \cs -> case unwrap p cs of
           [] -> []
-          [(a, cs')] -> unwrap (fmap a p) cs'
+          [(a, cs')] -> unwrap (fmap a q) cs'
       )
 
 -- | Define the monad instance
 instance Monad Parser where
-  return = pure
   p >>= f =
     Parser
       ( \cs -> case unwrap p cs of
@@ -51,16 +54,12 @@ instance Monad Parser where
 -- | Define the augment monad instance
 instance AugmentMonad Parser where
   zero = Parser (const [])
-  plus p q = Parser (\cs -> unwrap p cs ++ unwrap q cs)
-
--- | Deterministic addition of parsers
-(<|>) :: Parser a -> Parser a -> Parser a
-(<|>) p q =
-  Parser
-    ( \cs -> case unwrap (p `plus` q) cs of
-        [] -> []
-        (x : _) -> [x]
-    )
+  (<|>) p q =
+    Parser
+      ( \cs -> case unwrap p cs of
+          [] -> unwrap q cs
+          ((a, cs) : _) -> [(a, cs)]
+      )
 
 -- | Item function that consumes a character
 item :: Parser Char
@@ -75,14 +74,6 @@ item =
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy p = do c <- item; if p c then return c else zero
 
--- | Many combinator that repeately applicate a parser
-many :: Parser a -> Parser [a]
-many p = some p `plus` zero
-
--- | Some combinator that repeately applicate a parser
-some :: Parser a -> Parser [a]
-some p = do a <- p; as <- many p; return (a : as)
-
 -- | Parse token
 token :: Parser a -> Parser a
 token p = do space; v <- p; space; return v
@@ -93,11 +84,11 @@ space = many $ satisfy isSpace
 
 -- | Parse an identifier
 identifier :: Parser String
-identifier = token $ many $ satisfy isLetter
+identifier = token $ some $ satisfy isLetter
 
 -- | Parse a constant
 constant :: Parser Int
-constant = fmap (\s -> read s :: Int) (token $ many $ satisfy isDigit)
+constant = read <$> token (some $ satisfy isDigit)
 
 -- | Parse a specific character
 char :: Char -> Parser Char
@@ -143,13 +134,11 @@ parse cs = case unwrap program cs of
 
 -- | Parse a program
 program :: Parser Block
-program = do
-  keyword "shrimp"
-  many command
+program = do keyword "shrimp"; block
 
 -- | Parse a command
 command :: Parser Command
-command = assignment <|> branch <|> loop
+command = assignment <|> branch <|> loop <|> skip
 
 -- | Parse a command block
 block :: Parser [Command]
@@ -195,17 +184,23 @@ loop = do
   symbol ';'
   return p
 
+-- | Parse a skip command
+skip :: Parser Command
+skip = do
+  keyword "skip"
+  return Skip
+
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
 arithmeticExpr = ap <|> sp <|> arithmeticTerm
   where
     ap = do
-      symbol '+'
       a <- arithmeticTerm
+      symbol '+'
       Add a <$> arithmeticExpr
     sp = do
-      symbol '-'
       a <- arithmeticTerm
+      symbol '-'
       Sub a <$> arithmeticExpr
 
 -- | Parse an arithmetic term
@@ -213,8 +208,8 @@ arithmeticTerm :: Parser ArithmeticExpr
 arithmeticTerm = mp <|> arithmeticFactor
   where
     mp = do
-      symbol '*'
       a <- arithmeticFactor
+      symbol '*'
       Mul a <$> arithmeticTerm
 
 -- | Parse an arithmetic factor

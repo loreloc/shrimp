@@ -19,3 +19,4 @@ main = do
       let program = Parser.parse source
       let state = Interpreter.run program
       print state
+      

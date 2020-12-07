@@ -1,0 +1,11 @@
+shrimp
+f = 0;
+g = 1;
+k = 10;
+x = f;
+while (not (k eq 1)) do
+    x = f + g;
+    f = g;
+    g = x;
+    k = k - 1;
+end while;
