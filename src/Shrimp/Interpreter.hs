@@ -13,6 +13,7 @@ import Shrimp.Grammar
   )
 import Shrimp.State
   ( State (..),
+    empty,
     insert,
     search,
   )
@@ -75,3 +76,7 @@ execute s ((Branch b cs' cs'') : cs) =
     Error e -> exception e
 execute s (c@(Loop b cs') : cs) =
   execute s (Branch b (cs' ++ [c]) [Skip] : cs)
+
+-- | Run a program using an empty state as initial state
+run :: Block -> State
+run = execute empty
