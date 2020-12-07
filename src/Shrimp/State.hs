@@ -2,6 +2,7 @@ module Shrimp.State where
 
 -- | The state (memory) of the interpreter
 newtype State = State [(String, Int)]
+  deriving (Show)
 
 -- | Create an empty state
 empty :: State

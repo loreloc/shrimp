@@ -1,0 +1,8 @@
+shrimp
+i = 1;
+n = 5;
+x = 1;
+while (i leq n) do
+    x = x * i;
+    i = i + 1;
+end while;

@@ -4,15 +4,15 @@ import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
     Block,
     BooleanExpr (And, Boolean, Equal, LessEqual, Not, Or),
-    Command (Assignment, Branch, Loop, Skip),
+    Command (Assignment, Branch, Loop),
   )
 
 -- | Define the parser type
 newtype Parser a = Parser (String -> [(a, String)])
 
--- | Parse `unwrapping` function
-parse :: Parser a -> (String -> [(a, String)])
-parse (Parser p) = p
+-- | Define the parser unwrap function
+unwrap :: Parser a -> (String -> [(a, String)])
+unwrap (Parser p) = p
 
 -- | Define an augment monad class
 class Monad m => AugmentMonad m where
@@ -21,34 +21,43 @@ class Monad m => AugmentMonad m where
 
 -- | Define the functor instance
 instance Functor Parser where
-  fmap f p = Parser (\cs -> [(f a, cs') | (a, cs') <- parse p cs])
+  fmap f p =
+    Parser
+      ( \cs -> case unwrap p cs of
+          [] -> []
+          [(a, cs')] -> [(f a, cs')]
+      )
 
 -- | Define the applicative instance
 instance Applicative Parser where
   pure v = Parser (\cs -> [(v, cs)])
   (<*>) (Parser f) p =
     Parser
-      ( \cs ->
-          concat
-            [ [(g a, cs'') | (g, cs'') <- f cs'] | (a, cs') <- parse p cs
-            ]
+      ( \cs -> case f cs of
+          [] -> []
+          [(a, cs')] -> unwrap (fmap a p) cs'
       )
 
 -- | Define the monad instance
 instance Monad Parser where
-  return a = Parser (\cs -> [(a, cs)])
-  p >>= f = Parser (\cs -> concat [parse (f a) cs' | (a, cs') <- parse p cs])
+  return = pure
+  p >>= f =
+    Parser
+      ( \cs -> case unwrap p cs of
+          [] -> []
+          [(a, cs')] -> unwrap (f a) cs'
+      )
 
 -- | Define the augment monad instance
 instance AugmentMonad Parser where
   zero = Parser (const [])
-  plus p q = Parser (\cs -> parse p cs ++ parse q cs)
+  plus p q = Parser (\cs -> unwrap p cs ++ unwrap q cs)
 
 -- | Deterministic addition of parsers
 (<|>) :: Parser a -> Parser a -> Parser a
 (<|>) p q =
   Parser
-    ( \cs -> case parse (p `plus` q) cs of
+    ( \cs -> case unwrap (p `plus` q) cs of
         [] -> []
         (x : _) -> [x]
     )
@@ -68,7 +77,11 @@ satisfy p = do c <- item; if p c then return c else zero
 
 -- | Many combinator that repeately applicate a parser
 many :: Parser a -> Parser [a]
-many p = do a <- p; as <- many p; return (a : as)
+many p = some p `plus` zero
+
+-- | Some combinator that repeately applicate a parser
+some :: Parser a -> Parser [a]
+some p = do a <- p; as <- many p; return (a : as)
 
 -- | Parse token
 token :: Parser a -> Parser a
@@ -95,7 +108,7 @@ keyword :: String -> Parser String
 keyword cs = token $ keyword' cs
   where
     keyword' [c] = do char c; return [c]
-    keyword' (c : cs) = do char c; keyword cs; return (c : cs)
+    keyword' (c : cs) = do char c; keyword' cs; return (c : cs)
 
 -- | Parse a symbol
 symbol :: Char -> Parser Char
@@ -123,8 +136,10 @@ isLetter c
   | otherwise = False
 
 -- | Parse a string
-shrimp :: String -> Block
-shrimp cs = fst $ head $ parse program cs
+parse :: String -> Block
+parse cs = case unwrap program cs of
+  [] -> errorWithoutStackTrace "parsing error"
+  [(b, _)] -> b
 
 -- | Parse a program
 program :: Parser Block
@@ -134,11 +149,7 @@ program = do
 
 -- | Parse a command
 command :: Parser Command
-command = (assignment <|> branch <|> loop) `plus` semicolon
-  where
-    semicolon = do
-      symbol ';'
-      return Skip
+command = assignment <|> branch <|> loop
 
 -- | Parse a command block
 block :: Parser [Command]
@@ -149,7 +160,10 @@ assignment :: Parser Command
 assignment = do
   d <- identifier
   symbol '='
-  Assignment d <$> arithmeticExpr
+  a <- arithmeticExpr
+  let p = Assignment d a
+  symbol ';'
+  return p
 
 -- | Parse a branch command
 branch :: Parser Command
@@ -163,7 +177,9 @@ branch = do
   keyword "else"
   c2 <- block
   keyword "end if"
-  return (Branch b c1 c2)
+  let p = Branch b c1 c2
+  symbol ';'
+  return p
 
 -- | Parse a loop command
 loop :: Parser Command
@@ -175,7 +191,9 @@ loop = do
   keyword "do"
   c <- block
   keyword "end while"
-  return (Loop b c)
+  let p = Loop b c
+  symbol ';'
+  return p
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
