@@ -263,12 +263,12 @@ booleanExpr =
   do
     a <- arithmeticExpr
     keyword "lt"
-    LessEqual a <$> arithmeticExpr
+    Less a <$> arithmeticExpr
   <|>
   do
     a <- arithmeticExpr
     keyword "gt"
-    LessEqual a <$> arithmeticExpr
+    Greater a <$> arithmeticExpr
   <|>
   do
     a <- arithmeticExpr
@@ -278,7 +278,7 @@ booleanExpr =
   do
     a <- arithmeticExpr
     keyword "geq"
-    LessEqual a <$> arithmeticExpr
+    GreaterEqual a <$> arithmeticExpr
   <|>
   booleanTerm
 

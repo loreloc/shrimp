@@ -8,7 +8,18 @@ import Shrimp.Exception
 import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
     Block,
-    BooleanExpr (And, Boolean, Equal, LessEqual, Not, Or),
+    BooleanExpr
+      ( And,
+        Boolean,
+        Equal,
+        Greater,
+        GreaterEqual,
+        Less,
+        LessEqual,
+        Not,
+        NotEqual,
+        Or
+      ),
     Command (Assignment, Branch, Loop, Skip),
   )
 import Shrimp.State
@@ -54,7 +65,23 @@ evalBoolean s (Equal a1 a2) = (==) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
+evalBoolean s (NotEqual a1 a2) = (/=) <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalBoolean s (Less a1 a2) = (<) <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
 evalBoolean s (LessEqual a1 a2) = (<=) <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalBoolean s (Greater a1 a2) = (>) <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalBoolean s (GreaterEqual a1 a2) = (>=) <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
