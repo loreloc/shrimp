@@ -2,7 +2,8 @@ module Shrimp.Optimizer where
 
 import Shrimp.Exception
   ( Exception
-      ( InfiniteLoop
+      ( DivisionByZero,
+        InfiniteLoop
       ),
     exception,
   )
@@ -10,7 +11,9 @@ import Shrimp.Grammar
   ( ArithmeticExpr
       ( Add,
         Constant,
+        Div,
         Identifier,
+        Mod,
         Mul,
         Sub
       ),
@@ -85,6 +88,26 @@ optimizeArithmetic (Mul a1 a2) =
   case (a1', a2') of
     (Constant v1, Constant v2) -> Constant (v1 * v2)
     _ -> Mul a1' a2'
+  where
+    a1' = optimizeArithmetic a1
+    a2' = optimizeArithmetic a2
+optimizeArithmetic (Div a1 a2) =
+  case (a1', a2') of
+    (Constant v1, Constant v2) ->
+      if v2 == 0
+        then exception DivisionByZero
+        else Constant (v1 `div` v2)
+    _ -> Div a1' a2'
+  where
+    a1' = optimizeArithmetic a1
+    a2' = optimizeArithmetic a2
+optimizeArithmetic (Mod a1 a2) =
+  case (a1', a2') of
+    (Constant v1, Constant v2) ->
+      if v2 == 0
+        then exception DivisionByZero
+        else Constant (v1 `mod` v2)
+    _ -> Mod a1' a2'
   where
     a1' = optimizeArithmetic a1
     a2' = optimizeArithmetic a2

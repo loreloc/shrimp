@@ -3,6 +3,8 @@ module Shrimp.Exception where
 data Exception
   = -- | Define an infinite loop exception
     InfiniteLoop
+  | -- | Define a division by zero exception
+    DivisionByZero
   | -- | Define an undeclared variable exception
     UndeclaredVariable String
   deriving (Show)

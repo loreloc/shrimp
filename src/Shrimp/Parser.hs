@@ -4,7 +4,9 @@ import Shrimp.Grammar
   ( ArithmeticExpr
       ( Add,
         Constant,
+        Div,
         Identifier,
+        Mod,
         Mul,
         Sub
       ),
@@ -246,6 +248,16 @@ arithmeticTerm =
     a <- arithmeticFactor
     symbol '*'
     Mul a <$> arithmeticTerm
+  <|>
+  do
+    a <- arithmeticFactor
+    symbol '/'
+    Div a <$> arithmeticTerm
+  <|>
+  do
+    a <- arithmeticFactor
+    symbol '%'
+    Mod a <$> arithmeticTerm
   <|>
   arithmeticFactor
 

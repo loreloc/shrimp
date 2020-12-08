@@ -7,6 +7,10 @@ data ArithmeticExpr
     Sub ArithmeticExpr ArithmeticExpr
   | -- | Multiplication between sub-expressions
     Mul ArithmeticExpr ArithmeticExpr
+  | -- | (Integer) division between sub-expression
+    Div ArithmeticExpr ArithmeticExpr
+  | -- | Modulus between sub-expression
+    Mod ArithmeticExpr ArithmeticExpr
   | -- | Constant integer
     Constant Int
   | -- | Identifier string

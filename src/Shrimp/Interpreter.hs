@@ -9,7 +9,9 @@ import Shrimp.Grammar
   ( ArithmeticExpr
       ( Add,
         Constant,
+        Div,
         Identifier,
+        Mod,
         Mul,
         Sub
       ),
@@ -59,6 +61,14 @@ evalArithmetic s (Sub a1 a2) = (-) <$> v1 <*> v2
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
 evalArithmetic s (Mul a1 a2) = (*) <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Div a1 a2) = div <$> v1 <*> v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Mod a1 a2) = mod <$> v1 <*> v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
