@@ -63,7 +63,7 @@ safeDiv u v = Ok (div u v)
 -- | Safe modulus
 safeMod :: Int -> Int -> Result Int
 safeMod _ 0 = Error DivisionByZero
-safeMod u v = Ok (div u v)
+safeMod u v = Ok (mod u v)
 
 -- | Evaluate an arithmetic expression given a state
 evalArithmetic :: State -> ArithmeticExpr -> Result Int

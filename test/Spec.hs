@@ -44,8 +44,23 @@ testCalculator = do
         else error "Calculator - result mismatch"
     else error "Calculator - undefined result"
 
+testEuclid :: IO ()
+testEuclid = do
+  source <- readFile "examples/euclid.shr"
+  let (program, _) = Parser.parse source
+  let state = Interpreter.run program
+  let a = State.search "a" state
+  let b = State.search "b" state
+  if isJust a && isJust b
+  then
+    if fromJust a == 21 && fromJust b == 0
+      then print "Euclid - passed"
+      else error "Euclid - result mismatch"
+  else error "Euclid - undefined result"
+
 main :: IO ()
 main = do
   testFactorial
   testFibonacci
   testCalculator
+  testEuclid
