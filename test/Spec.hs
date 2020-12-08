@@ -3,73 +3,42 @@ import qualified Shrimp.Interpreter as Interpreter
 import qualified Shrimp.Parser as Parser
 import qualified Shrimp.State as State
 
+test :: String -> String -> [(String, Int)] -> IO ()
+test name filepath variables = do
+  source <- readFile filepath
+  let (program, message) = Parser.parse source
+  if not $ null message
+    then do
+      putStrLn (name ++ " - parser error:")
+      print message
+    else do
+      let state = Interpreter.run program
+      if not $ and [isJust (State.search d state) | (d, v) <- variables]
+        then putStrLn (name ++ " - undefined result")
+        else do
+          if and [fromJust (State.search d state) == v | (d, v) <- variables]
+            then putStrLn (name ++ " - passed")
+            else putStrLn (name ++ " - result mismatch")
+
 testFactorial :: IO ()
-testFactorial = do
-  source <- readFile "examples/factorial.shr"
-  let (program, _) = Parser.parse source
-  let state = Interpreter.run program
-  let x = State.search "x" state
-  if isJust x
-    then
-      if fromJust x == 120
-        then print "Factorial - passed"
-        else error "Factorial - result mismatch"
-    else error "Factorial - undefined result"
+testFactorial =
+  test "Factorial" "examples/factorial.shr" [("x", 120), ("n", 5), ("i", 6)]
 
 testFibonacci :: IO ()
-testFibonacci = do
-  source <- readFile "examples/fibonacci.shr"
-  let (program, _) = Parser.parse source
-  let state = Interpreter.run program
-  let x = State.search "x" state
-  let f = State.search "f" state
-  let g = State.search "g" state
-  if isJust x && isJust f && isJust g
-    then
-      if fromJust x == 55 && fromJust f == 34 && fromJust g == 55
-        then print "Fibonacci - passed"
-        else error "Fibonacci - result mismatch"
-    else error "Fibonacci - undefined result"
+testFibonacci =
+  test "Fibonacci" "examples/fibonacci.shr" [("x", 55), ("f", 34), ("g", 55), ("k", 1)]
 
 testCalculator :: IO ()
-testCalculator = do
-  source <- readFile "examples/calculator.shr"
-  let (program, _) = Parser.parse source
-  let state = Interpreter.run program
-  let x = State.search "result" state
-  if isJust x
-    then
-      if fromJust x == 8
-        then print "Calculator - passed"
-        else error "Calculator - result mismatch"
-    else error "Calculator - undefined result"
+testCalculator =
+  test "Calculator" "examples/calculator.shr" [("x", 10), ("y", 2), ("op", 1), ("result", 8)]
 
 testEuclid :: IO ()
-testEuclid = do
-  source <- readFile "examples/euclid.shr"
-  let (program, _) = Parser.parse source
-  let state = Interpreter.run program
-  let a = State.search "a" state
-  let b = State.search "b" state
-  if isJust a && isJust b
-    then
-      if fromJust a == 21 && fromJust b == 0
-        then print "Euclid - passed"
-        else error "Euclid - result mismatch"
-    else error "Euclid - undefined result"
+testEuclid =
+  test "Euclid" "examples/euclid.shr" [("a", 21), ("b", 0), ("t", 21)]
 
 testTripleNeg :: IO ()
-testTripleNeg = do
-  source <- readFile "examples/tripleneg.shr"
-  let (program, _) = Parser.parse source
-  let state = Interpreter.run program
-  let x = State.search "x" state
-  if isJust x
-    then
-      if fromJust x == (-1816)
-        then print "TripleNeg - passed"
-        else error "TripleNeg - result mismatch"
-    else error "TripleNeg - undefined result"
+testTripleNeg =
+  test "TripleNeg" "examples/tripleneg.shr" [("x", -1816), ("y", 42)]
 
 main :: IO ()
 main = do
