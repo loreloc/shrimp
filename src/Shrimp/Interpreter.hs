@@ -1,12 +1,18 @@
 module Shrimp.Interpreter where
 
 import Shrimp.Exception
-  ( Result (Error, Ok),
-    RuntimeException (UndeclaredVariable),
+  ( Exception (UndeclaredVariable),
+    Result (Error, Ok),
     exception,
   )
 import Shrimp.Grammar
-  ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
+  ( ArithmeticExpr
+      ( Add,
+        Constant,
+        Identifier,
+        Mul,
+        Sub
+      ),
     Block,
     BooleanExpr
       ( And,
@@ -20,7 +26,15 @@ import Shrimp.Grammar
         NotEqual,
         Or
       ),
-    Command (Assignment, Branch, Loop, Skip),
+    Command
+      ( Assignment,
+        Branch,
+        Loop,
+        Skip
+      ),
+  )
+import Shrimp.Optimizer
+  ( optimize,
   )
 import Shrimp.State
   ( State (..),
@@ -106,4 +120,4 @@ execute s (c@(Loop b cs') : cs) =
 
 -- | Run a program using an empty state as initial state
 run :: Block -> State
-run = execute empty
+run = execute empty . optimize

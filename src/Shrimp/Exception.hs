@@ -1,12 +1,14 @@
 module Shrimp.Exception where
 
-data RuntimeException
-  = -- | Define an undeclared variable exception
+data Exception
+  = -- | Define an infinite loop exception
+    InfiniteLoop
+  | -- | Define an undeclared variable exception
     UndeclaredVariable String
   deriving (Show)
 
 -- | Define a result data structure
-data Result a = Ok a | Error RuntimeException
+data Result a = Ok a | Error Exception
 
 instance Functor Result where
   fmap f (Ok v) = Ok (f v)
@@ -19,5 +21,5 @@ instance Applicative Result where
   (<*>) _ (Error e) = Error e
 
 -- | Define a custom exception error
-exception :: RuntimeException -> a
+exception :: Exception -> a
 exception e = errorWithoutStackTrace $ show e

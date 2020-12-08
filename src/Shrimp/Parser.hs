@@ -1,7 +1,13 @@
 module Shrimp.Parser where
 
 import Shrimp.Grammar
-  ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
+  ( ArithmeticExpr
+      ( Add,
+        Constant,
+        Identifier,
+        Mul,
+        Sub
+      ),
     Block,
     BooleanExpr
       ( And,
@@ -15,7 +21,12 @@ import Shrimp.Grammar
         NotEqual,
         Or
       ),
-    Command (Assignment, Branch, Loop, Skip),
+    Command
+      ( Assignment,
+        Branch,
+        Loop,
+        Skip
+      ),
   )
 
 -- | Define the parser type
