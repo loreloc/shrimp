@@ -24,8 +24,16 @@ data BooleanExpr
     And BooleanExpr BooleanExpr
   | -- | Equal arithmetic operator
     Equal ArithmeticExpr ArithmeticExpr
+  | -- | Not equal arithmetic operator
+    NotEqual ArithmeticExpr ArithmeticExpr
+  | -- | Less than arithmetic operator
+    Less ArithmeticExpr ArithmeticExpr
+  | -- | Greater than arithmetic operator
+    Greater ArithmeticExpr ArithmeticExpr
   | -- | Less than or equal arithmetic operator
     LessEqual ArithmeticExpr ArithmeticExpr
+  | -- | Less than or equal arithmetic operator
+    GreaterEqual ArithmeticExpr ArithmeticExpr
   deriving (Show)
 
 -- | Commands declaration

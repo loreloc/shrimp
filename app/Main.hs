@@ -20,5 +20,6 @@ main = do
       if null message
         then do
           let state = Interpreter.run program
+          putStrLn "Memory state:"
           print state
         else print message

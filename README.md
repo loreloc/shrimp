@@ -18,7 +18,11 @@ BooleanExpr ::= "true" | "false"
               | BooleanExpr "or" BooleanExpr
               | BooleanExpr "and" BooleanExpr
               | ArithmeticExpr "eq" ArithmeticExpr
+              | ArithmeticExpr "neq" ArithmeticExpr
+              | ArithmeticExpr "lt" ArithmeticExpr
+              | ArithmeticExpr "gt" ArithmeticExpr
               | ArithmeticExpr "leq" ArithmeticExpr
+              | ArithmeticExpr "geq" ArithmeticExpr
 Command ::= {Assignment | Branch | Loop} ";"
 Block ::= [Command]*
 Assignment ::= Identifier "=" ArithmeticExpr

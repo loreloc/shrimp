@@ -3,7 +3,18 @@ module Shrimp.Parser where
 import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Identifier, Mul, Sub),
     Block,
-    BooleanExpr (And, Boolean, Equal, LessEqual, Not, Or),
+    BooleanExpr
+      ( And,
+        Boolean,
+        Equal,
+        Greater,
+        GreaterEqual,
+        Less,
+        LessEqual,
+        Not,
+        NotEqual,
+        Or
+      ),
     Command (Assignment, Branch, Loop, Skip),
   )
 
@@ -192,79 +203,111 @@ skip = do
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
-arithmeticExpr = ap <|> sp <|> arithmeticTerm
-  where
-    ap = do
-      a <- arithmeticTerm
-      symbol '+'
-      Add a <$> arithmeticExpr
-    sp = do
-      a <- arithmeticTerm
-      symbol '-'
-      Sub a <$> arithmeticExpr
+arithmeticExpr =
+  do
+    a <- arithmeticTerm
+    symbol '+'
+    Add a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticTerm
+    symbol '-'
+    Sub a <$> arithmeticExpr
+  <|>
+  arithmeticTerm
 
 -- | Parse an arithmetic term
 arithmeticTerm :: Parser ArithmeticExpr
-arithmeticTerm = mp <|> arithmeticFactor
-  where
-    mp = do
-      a <- arithmeticFactor
-      symbol '*'
-      Mul a <$> arithmeticTerm
+arithmeticTerm =
+  do
+    a <- arithmeticFactor
+    symbol '*'
+    Mul a <$> arithmeticTerm
+  <|>
+  arithmeticFactor
 
 -- | Parse an arithmetic factor
 arithmeticFactor :: Parser ArithmeticExpr
-arithmeticFactor = cp <|> ip <|> nested
-  where
-    cp = Constant <$> constant
-    ip = Identifier <$> identifier
-    nested = do
-      symbol '('
-      ep <- arithmeticExpr
-      symbol ')'
-      return ep
+arithmeticFactor =
+  do
+    Constant <$> constant
+  <|>
+  do
+    Identifier <$> identifier
+  <|>
+  do
+    symbol '('
+    ep <- arithmeticExpr
+    symbol ')'
+    return ep
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
-booleanExpr = op <|> lp <|> ep <|> booleanTerm
-  where
-    op = do
-      b <- booleanTerm
-      keyword "or"
-      Or b <$> booleanExpr
-    lp = do
-      a <- arithmeticExpr
-      keyword "leq"
-      LessEqual a <$> arithmeticExpr
-    ep = do
-      a <- arithmeticExpr
-      keyword "eq"
-      Equal a <$> arithmeticExpr
+booleanExpr =
+  do
+    b <- booleanTerm
+    keyword "or"
+    Or b <$> booleanExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "eq"
+    Equal a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "neq"
+    NotEqual a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "lt"
+    LessEqual a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "gt"
+    LessEqual a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "leq"
+    LessEqual a <$> arithmeticExpr
+  <|>
+  do
+    a <- arithmeticExpr
+    keyword "geq"
+    LessEqual a <$> arithmeticExpr
+  <|>
+  booleanTerm
 
 -- | Parse a boolean term
 booleanTerm :: Parser BooleanExpr
-booleanTerm = ap <|> booleanFactor
-  where
-    ap = do
-      b <- booleanFactor
-      keyword "and"
-      And b <$> booleanTerm
+booleanTerm =
+  do
+    b <- booleanFactor
+    keyword "and"
+    And b <$> booleanTerm
+  <|>
+  booleanFactor
 
 -- | Parse a boolean factor
 booleanFactor :: Parser BooleanExpr
-booleanFactor = tp <|> fp <|> np <|> nested
-  where
-    tp = do
-      keyword "true"
-      return (Boolean True)
-    fp = do
-      keyword "false"
-      return (Boolean False)
-    np = do
-      keyword "not"
-      Not <$> booleanExpr
-    nested = do
-      symbol '('
-      ep <- booleanExpr
-      symbol ')'
-      return ep
+booleanFactor =
+  do
+    keyword "true"
+    return (Boolean True)
+  <|>
+  do
+    keyword "false"
+    return (Boolean False)
+  <|>
+  do
+    keyword "not"
+    Not <$> booleanExpr
+  <|>
+  do
+    symbol '('
+    ep <- booleanExpr
+    symbol ')'
+    return ep
