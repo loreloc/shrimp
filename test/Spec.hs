@@ -1,6 +1,6 @@
 import Data.Maybe (fromJust, isJust)
-import qualified Shrimp.Parser as Parser
 import qualified Shrimp.Interpreter as Interpreter
+import qualified Shrimp.Parser as Parser
 import qualified Shrimp.State as State
 
 testFactorial :: IO ()
@@ -25,11 +25,11 @@ testFibonacci = do
   let f = State.search "f" state
   let g = State.search "g" state
   if isJust x && isJust f && isJust g
-  then
-    if fromJust x == 55 && fromJust f == 34 && fromJust g == 55
-      then print "Fibonacci - passed"
-      else error "Fibonacci - result mismatch"
-  else error "Fibonacci - undefined result"
+    then
+      if fromJust x == 55 && fromJust f == 34 && fromJust g == 55
+        then print "Fibonacci - passed"
+        else error "Fibonacci - result mismatch"
+    else error "Fibonacci - undefined result"
 
 testCalculator :: IO ()
 testCalculator = do
@@ -52,11 +52,24 @@ testEuclid = do
   let a = State.search "a" state
   let b = State.search "b" state
   if isJust a && isJust b
-  then
-    if fromJust a == 21 && fromJust b == 0
-      then print "Euclid - passed"
-      else error "Euclid - result mismatch"
-  else error "Euclid - undefined result"
+    then
+      if fromJust a == 21 && fromJust b == 0
+        then print "Euclid - passed"
+        else error "Euclid - result mismatch"
+    else error "Euclid - undefined result"
+
+testTripleNeg :: IO ()
+testTripleNeg = do
+  source <- readFile "examples/tripleneg.shr"
+  let (program, _) = Parser.parse source
+  let state = Interpreter.run program
+  let x = State.search "x" state
+  if isJust x
+    then
+      if fromJust x == (-1816)
+        then print "TripleNeg - passed"
+        else error "TripleNeg - result mismatch"
+    else error "TripleNeg - undefined result"
 
 main :: IO ()
 main = do
@@ -64,3 +77,4 @@ main = do
   testFibonacci
   testCalculator
   testEuclid
+  testTripleNeg
