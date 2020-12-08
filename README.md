@@ -23,10 +23,10 @@ BooleanExpr ::= "true" | "false"
               | ArithmeticExpr "gt" ArithmeticExpr
               | ArithmeticExpr "leq" ArithmeticExpr
               | ArithmeticExpr "geq" ArithmeticExpr
-Command ::= {Assignment | Branch | Loop} ";"
+Command ::= {Assignment | Branch | Loop}
 Block ::= [Command]*
-Assignment ::= Identifier "=" ArithmeticExpr
-Branch ::= "if" "(" BooleanExpr ")" "then" Block "else" v "end if"
-Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while"
+Assignment ::= Identifier "=" ArithmeticExpr ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block {"else" Block} "end if" ";"
+Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while" ";"
 Program ::= "shrimp" Block
 ```

@@ -167,19 +167,30 @@ assignment = do
 
 -- | Parse a branch command
 branch :: Parser Command
-branch = do
-  keyword "if"
-  symbol '('
-  b <- booleanExpr
-  symbol ')'
-  keyword "then"
-  c1 <- block
-  keyword "else"
-  c2 <- block
-  keyword "end if"
-  let p = Branch b c1 c2
-  symbol ';'
-  return p
+branch =
+  do
+    keyword "if"
+    symbol '('
+    b <- booleanExpr
+    symbol ')'
+    keyword "then"
+    c1 <- block
+    keyword "else"
+    c2 <- block
+    keyword "end if"
+    symbol ';'
+    return (Branch b c1 c2)
+  <|> 
+  do
+    keyword "if"
+    symbol '('
+    b <- booleanExpr
+    symbol ')'
+    keyword "then"
+    c <- block
+    keyword "end if"
+    symbol ';'
+    return (Branch b c [Skip])
 
 -- | Parse a loop command
 loop :: Parser Command

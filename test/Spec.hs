@@ -8,10 +8,10 @@ testFactorial = do
   source <- readFile "examples/factorial.shr"
   let (program, _) = Parser.parse source
   let state = Interpreter.run program
-  let v = State.search "x" state
-  if isJust v
+  let x = State.search "x" state
+  if isJust x
     then
-      if fromJust v == 120
+      if fromJust x == 120
         then print "Factorial - passed"
         else error "Factorial - result mismatch"
     else error "Factorial - undefined result"
@@ -21,12 +21,12 @@ testFibonacci = do
   source <- readFile "examples/fibonacci.shr"
   let (program, _) = Parser.parse source
   let state = Interpreter.run program
-  let v = State.search "x" state
+  let x = State.search "x" state
   let f = State.search "f" state
   let g = State.search "g" state
-  if isJust v && isJust f && isJust g
+  if isJust x && isJust f && isJust g
   then
-    if fromJust v == 55 && fromJust f == 34 && fromJust g == 55
+    if fromJust x == 55 && fromJust f == 34 && fromJust g == 55
       then print "Fibonacci - passed"
       else error "Fibonacci - result mismatch"
   else error "Fibonacci - undefined result"
@@ -36,10 +36,10 @@ testCalculator = do
   source <- readFile "examples/calculator.shr"
   let (program, _) = Parser.parse source
   let state = Interpreter.run program
-  let v = State.search "result" state
-  if isJust v
+  let x = State.search "result" state
+  if isJust x
     then
-      if fromJust v == 8
+      if fromJust x == 8
         then print "Calculator - passed"
         else error "Calculator - result mismatch"
     else error "Calculator - undefined result"
