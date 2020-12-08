@@ -13,7 +13,7 @@ Program ::= "shrimp" Block
 Block ::= [Command]*
 Command ::= {Assignment | Branch | Loop}
 Assignment ::= Identifier "=" ArithmeticExpr ";"
-Branch ::= "if" "(" BooleanExpr ")" "then" Block {"else" Block} "end if" ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block ["else" Block] "end if" ";"
 Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while" ";"
 
 ArithmeticExpr ::=
