@@ -1,0 +1,119 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+
+% fe7a47
+\definecolor{background}{rgb}{1.00, 1.00, 1.00}
+\definecolor{brightred}{rgb}{0.80, 0.03, 0.16}
+\definecolor{brightorange}{rgb}{0.79, 0.28, 0.08}
+
+\lstdefinestyle{ebnf-style}{
+    backgroundcolor=\color{background},
+    stringstyle=\color{brightred},
+    basicstyle=\ttfamily\footnotesize,
+    literate=%
+        {|}{{{\color{brightorange}|}}}1
+        {::=}{{{\color{brightorange}::=}}}3,
+    breakatwhitespace=false,
+    breaklines=true,
+    keepspaces=true,
+    numbers=left,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\date{}
+\title{
+    \includegraphics[width=0.67\linewidth]{logo.pdf} \\
+    an interpreted imperative programming language that wants to believe
+}
+\author{Lorenzo Loconte}
+
+\begin{document}
+\maketitle
+
+\section*{Introduction}
+\textbf{Shrimp} is a simple imperative programming language designed during the course of \textit{Formal Methods for Computer Science} at Universita' degli Studi di Bari Aldo Moro.
+\textbf{Shrimp} uses an \textit{eager evaluation strategy}.
+In order to ensure that, the interpreter executes the code using the \textit{call by value} method.
+
+\clearpage
+
+\section*{Software Modules}
+The program is composed by three main components:
+\begin{itemize}
+    \item The \textbf{parser}
+    \item The \textbf{optimizer}
+    \item The \textbf{interpreter}
+\end{itemize}
+
+The \textbf{parser} takes in input the source code and convert it to an intermediate representation.
+The intermediate representation (IR) have the structure of a n-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and literals on the leaves.
+
+The \textbf{optimizer} takes in input the intermediate representation given by the parser.
+The result of the optimizer is an \textit{optimized} intermediate representation.
+It evaluates the constant expressions (both arithmetic and boolean) that might be present in the source code and replace them with literals.
+The optimizer also checks for empty commands block and useless branch statements.
+
+The \textbf{interpreter} execute the semantics present in an intermediate representation.
+The basic idea is to use a \textbf{state} (or environment) that collects the values of the variables during the execution of the program.
+The result of the interpretation is the resulting state, that is a set of assignments to the variables.
+
+\clearpage
+
+\section*{Language Syntax}
+The syntax for the \textbf{Shrimp} programming language can be denoted using EBNF (Extended Backus Naur Form) as following:
+\begin{lstlisting}[language=C, style=ebnf-style]
+Type ::= "int"
+Integer ::= [0-9]+
+Identifier ::= [a-zA-Z_]+
+Program ::= "shrimp" Block
+Block ::= [Command]*
+Command ::= {Assignment | Branch | Loop}
+Assignment ::= Identifier "=" ArithmeticExpr ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block
+           ["else" Block] "end if" ";"
+Loop ::= "while" "(" BooleanExpr ")" "do"
+         Block "end while" ";"
+
+ArithmeticExpr ::=
+      ArithmeticTerm "+" ArithmeticExpr
+    | ArithmeticTerm "-" ArithmeticExpr
+    | ArithmetciTerm
+ArithmeticTerm ::=
+      ArithmeticFactor "*" ArithmeticTerm
+    | ArithmeticFactor "/" ArithmeticTerm
+    | ArithmeticFactor "%" ArithmeticTerm
+    | ArithmeticFactor
+arithmeticFactor ::=
+      Integer
+    | Identifier
+    | "-" ArithmeticExpr
+    | "(" ArithmeticExpr ")"
+
+BooleanExpr ::=
+      BooleanTerm "or" BooleanExpr
+    | BooleanTerm
+BooleanTerm ::=
+      BooleanFactor "and" BooleanTerm
+    | BooleanFactor
+BooleanFactor ::=
+      "true"
+    | "false"
+    | "not" BooleanExpr
+    | ArithmetciExpr "eq" ArithmeticExpr
+    | ArithmetciExpr "neq" ArithmeticExpr
+    | ArithmetciExpr "lt" ArithmeticExpr
+    | ArithmetciExpr "gt" ArithmeticExpr
+    | ArithmetciExpr "leq" ArithmeticExpr
+    | ArithmetciExpr "geq" ArithmeticExpr
+    | "(" BooleanExpr ")"
+\end{lstlisting}
+
+\end{document}
