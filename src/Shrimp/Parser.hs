@@ -199,6 +199,7 @@ loop = do
 skip :: Parser Command
 skip = do
   keyword "skip"
+  symbol ';'
   return Skip
 
 -- | Parse an arithmetic expression
