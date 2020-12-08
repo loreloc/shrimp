@@ -1,38 +1,11 @@
 module Shrimp.Parser where
 
-import Control.Applicative
-  ( Alternative (empty, (<|>), many, some),
-  )
+import Control.Applicative (Alternative (empty, many, some, (<|>)))
 import Shrimp.Grammar
-  ( ArithmeticExpr
-      ( Add,
-        Constant,
-        Div,
-        Identifier,
-        Mod,
-        Mul,
-        Neg,
-        Sub
-      ),
+  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
     Block,
-    BooleanExpr
-      ( And,
-        Boolean,
-        Equal,
-        Greater,
-        GreaterEqual,
-        Less,
-        LessEqual,
-        Not,
-        NotEqual,
-        Or
-      ),
-    Command
-      ( Assignment,
-        Branch,
-        Loop,
-        Skip
-      ),
+    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
+    Command (Assignment, Branch, Loop, Skip),
   )
 
 -- | Define the parser type

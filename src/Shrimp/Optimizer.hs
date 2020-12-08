@@ -1,41 +1,14 @@
 module Shrimp.Optimizer where
 
 import Shrimp.Exception
-  ( Exception
-      ( DivisionByZero,
-        InfiniteLoop
-      ),
+  ( Exception (DivisionByZero, InfiniteLoop),
     exception,
   )
 import Shrimp.Grammar
-  ( ArithmeticExpr
-      ( Add,
-        Constant,
-        Div,
-        Identifier,
-        Mod,
-        Mul,
-        Sub
-      ),
+  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
     Block,
-    BooleanExpr
-      ( And,
-        Boolean,
-        Equal,
-        Greater,
-        GreaterEqual,
-        Less,
-        LessEqual,
-        Not,
-        NotEqual,
-        Or
-      ),
-    Command
-      ( Assignment,
-        Branch,
-        Loop,
-        Skip
-      ),
+    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
+    Command (Assignment, Branch, Loop, Skip),
   )
 
 -- | Optimize a block of instructions
@@ -111,6 +84,12 @@ optimizeArithmetic (Mod a1 a2) =
   where
     a1' = optimizeArithmetic a1
     a2' = optimizeArithmetic a2
+optimizeArithmetic (Neg a) =
+  case a' of
+    (Constant v) -> Constant (- v)
+    _ -> Neg a'
+  where
+    a' = optimizeArithmetic a
 
 -- | Optimize a boolean expression
 optimizeBoolean :: BooleanExpr -> BooleanExpr

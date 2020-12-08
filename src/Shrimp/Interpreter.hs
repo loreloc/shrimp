@@ -1,59 +1,20 @@
 module Shrimp.Interpreter where
 
-import Control.Applicative
-  ( liftA2,
-  )
-import Control.Monad
-  ( join,
-  )
+import Control.Applicative (liftA2)
+import Control.Monad (join)
 import Shrimp.Exception
-  ( Exception
-      ( DivisionByZero,
-        UndeclaredVariable
-      ),
+  ( Exception (DivisionByZero, UndeclaredVariable),
     Result (Error, Ok),
     exception,
   )
 import Shrimp.Grammar
-  ( ArithmeticExpr
-      ( Add,
-        Constant,
-        Div,
-        Identifier,
-        Mod,
-        Mul,
-        Neg,
-        Sub
-      ),
+  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
     Block,
-    BooleanExpr
-      ( And,
-        Boolean,
-        Equal,
-        Greater,
-        GreaterEqual,
-        Less,
-        LessEqual,
-        Not,
-        NotEqual,
-        Or
-      ),
-    Command
-      ( Assignment,
-        Branch,
-        Loop,
-        Skip
-      ),
+    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
+    Command (Assignment, Branch, Loop, Skip),
   )
-import Shrimp.Optimizer
-  ( optimize,
-  )
-import Shrimp.State
-  ( State (..),
-    empty,
-    insert,
-    search,
-  )
+import Shrimp.Optimizer (optimize)
+import Shrimp.State (State (..), empty, insert, search)
 
 -- | Safe division
 safeDiv :: Int -> Int -> Result Int
