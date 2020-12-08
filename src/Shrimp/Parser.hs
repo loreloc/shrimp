@@ -8,6 +8,7 @@ import Shrimp.Grammar
         Identifier,
         Mod,
         Mul,
+        Neg,
         Sub
       ),
     Block,
@@ -68,7 +69,7 @@ instance Applicative Parser where
 
 -- | Define the monad instance
 instance Monad Parser where
-  p >>= f =
+  (>>=) p f =
     Parser
       ( \cs -> case unwrap p cs of
           [] -> []
@@ -229,120 +230,67 @@ skip = do
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
 arithmeticExpr =
-  do
-    a <- arithmeticTerm
-    symbol '+'
-    Add a <$> arithmeticExpr
+  do a <- arithmeticTerm; symbol '+'; Add a <$> arithmeticExpr
   <|>
-  do
-    a <- arithmeticTerm
-    symbol '-'
-    Sub a <$> arithmeticExpr
+  do a <- arithmeticTerm; symbol '-'; Sub a <$> arithmeticExpr
   <|>
-  arithmeticTerm
+  do arithmeticTerm
 
 -- | Parse an arithmetic term
 arithmeticTerm :: Parser ArithmeticExpr
 arithmeticTerm =
-  do
-    a <- arithmeticFactor
-    symbol '*'
-    Mul a <$> arithmeticTerm
+  do a <- arithmeticFactor; symbol '*'; Mul a <$> arithmeticTerm
   <|>
-  do
-    a <- arithmeticFactor
-    symbol '/'
-    Div a <$> arithmeticTerm
+  do a <- arithmeticFactor; symbol '/'; Div a <$> arithmeticTerm
   <|>
-  do
-    a <- arithmeticFactor
-    symbol '%'
-    Mod a <$> arithmeticTerm
+  do a <- arithmeticFactor; symbol '%'; Mod a <$> arithmeticTerm
   <|>
-  arithmeticFactor
+  do arithmeticFactor
 
 -- | Parse an arithmetic factor
 arithmeticFactor :: Parser ArithmeticExpr
 arithmeticFactor =
-  do
-    Constant <$> constant
+  do Constant <$> constant
   <|>
-  do
-    Identifier <$> identifier
+  do Identifier <$> identifier
   <|>
-  do
-    symbol '('
-    ep <- arithmeticExpr
-    symbol ')'
-    return ep
+  do symbol '-'; Neg <$> arithmeticExpr
+  <|>
+  do symbol '('; a <- arithmeticExpr; symbol ')'; return a
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
 booleanExpr =
-  do
-    b <- booleanTerm
-    keyword "or"
-    Or b <$> booleanExpr
+  do b <- booleanTerm; keyword "or"; Or b <$> booleanExpr
   <|>
-  do
-    a <- arithmeticExpr
-    keyword "eq"
-    Equal a <$> arithmeticExpr
-  <|>
-  do
-    a <- arithmeticExpr
-    keyword "neq"
-    NotEqual a <$> arithmeticExpr
-  <|>
-  do
-    a <- arithmeticExpr
-    keyword "lt"
-    Less a <$> arithmeticExpr
-  <|>
-  do
-    a <- arithmeticExpr
-    keyword "gt"
-    Greater a <$> arithmeticExpr
-  <|>
-  do
-    a <- arithmeticExpr
-    keyword "leq"
-    LessEqual a <$> arithmeticExpr
-  <|>
-  do
-    a <- arithmeticExpr
-    keyword "geq"
-    GreaterEqual a <$> arithmeticExpr
-  <|>
-  booleanTerm
+  do booleanTerm
 
 -- | Parse a boolean term
 booleanTerm :: Parser BooleanExpr
 booleanTerm =
-  do
-    b <- booleanFactor
-    keyword "and"
-    And b <$> booleanTerm
+  do b <- booleanFactor; keyword "and"; And b <$> booleanTerm
   <|>
-  booleanFactor
+  do booleanFactor
 
 -- | Parse a boolean factor
 booleanFactor :: Parser BooleanExpr
 booleanFactor =
-  do
-    keyword "true"
-    return (Boolean True)
+  do keyword "true"; return (Boolean True)
   <|>
-  do
-    keyword "false"
-    return (Boolean False)
+  do keyword "false"; return (Boolean False)
   <|>
-  do
-    keyword "not"
-    Not <$> booleanExpr
+  do keyword "not"; Not <$> booleanExpr
   <|>
-  do
-    symbol '('
-    ep <- booleanExpr
-    symbol ')'
-    return ep
+  do a <- arithmeticExpr; keyword "eq"; Equal a <$> arithmeticExpr
+  <|>
+  do a <- arithmeticExpr; keyword "neq"; NotEqual a <$> arithmeticExpr
+  <|>
+  do a <- arithmeticExpr; keyword "lt"; Less a <$> arithmeticExpr
+  <|>
+  do a <- arithmeticExpr; keyword "gt"; Greater a <$> arithmeticExpr
+  <|>
+  do a <- arithmeticExpr; keyword "leq"; LessEqual a <$> arithmeticExpr
+  <|>
+  do a <- arithmeticExpr; keyword "geq"; GreaterEqual a <$> arithmeticExpr
+  <|>
+  do symbol '('; b <- booleanExpr; symbol ')'; return b

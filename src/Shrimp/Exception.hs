@@ -22,6 +22,18 @@ instance Applicative Result where
   (<*>) (Error e) _ = Error e
   (<*>) _ (Error e) = Error e
 
+instance Monad Result where
+  (>>=) (Ok v) f = f v
+  (>>=) (Error e) _ = Error e
+
 -- | Define a custom exception error
 exception :: Exception -> a
 exception e = errorWithoutStackTrace $ show e
+
+-- | Applicative binary lift
+liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
+liftA2 f x y = f <$> x <*> y
+
+-- | Monadic join
+join :: (Monad m) => m (m a) -> m a
+join m = m >>= id

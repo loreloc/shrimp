@@ -1,9 +1,14 @@
 module Shrimp.Interpreter where
 
 import Shrimp.Exception
-  ( Exception (UndeclaredVariable),
+  ( Exception
+      ( DivisionByZero,
+        UndeclaredVariable
+      ),
     Result (Error, Ok),
     exception,
+    join,
+    liftA2,
   )
 import Shrimp.Grammar
   ( ArithmeticExpr
@@ -13,6 +18,7 @@ import Shrimp.Grammar
         Identifier,
         Mod,
         Mul,
+        Neg,
         Sub
       ),
     Block,
@@ -45,6 +51,16 @@ import Shrimp.State
     search,
   )
 
+-- | Safe division
+safeDiv :: Int -> Int -> Result Int
+safeDiv _ 0 = Error DivisionByZero
+safeDiv u v = Ok (div u v)
+
+-- | Safe modulus
+safeMod :: Int -> Int -> Result Int
+safeMod _ 0 = Error DivisionByZero
+safeMod u v = Ok (div u v)
+
 -- | Evaluate an arithmetic expression given a state
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
@@ -52,60 +68,63 @@ evalArithmetic s (Identifier d) =
   case search d s of
     Just v -> Ok v
     Nothing -> Error (UndeclaredVariable d)
-evalArithmetic s (Add a1 a2) = (+) <$> v1 <*> v2
+evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Sub a1 a2) = (-) <$> v1 <*> v2
+evalArithmetic s (Sub a1 a2) = liftA2 (-) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Mul a1 a2) = (*) <$> v1 <*> v2
+evalArithmetic s (Mul a1 a2) = liftA2 (*) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Div a1 a2) = div <$> v1 <*> v2
+evalArithmetic s (Div a1 a2) = join $ liftA2 safeDiv v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalArithmetic s (Mod a1 a2) = mod <$> v1 <*> v2
+evalArithmetic s (Mod a1 a2) = join $ liftA2 safeMod v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
+evalArithmetic s (Neg a) = negate <$> v
+  where
+    v = evalArithmetic s a
 
 -- | Evaluate a boolean expression given a state
 evalBoolean :: State -> BooleanExpr -> Result Bool
 evalBoolean _ (Boolean t) = Ok t
 evalBoolean s (Not b) = not <$> evalBoolean s b
-evalBoolean s (Or b1 b2) = (||) <$> t1 <*> t2
+evalBoolean s (Or b1 b2) = liftA2 (||) t1 t2
   where
     t1 = evalBoolean s b1
     t2 = evalBoolean s b2
-evalBoolean s (And b1 b2) = (&&) <$> t1 <*> t2
+evalBoolean s (And b1 b2) = liftA2 (&&) t1 t2
   where
     t1 = evalBoolean s b1
     t2 = evalBoolean s b2
-evalBoolean s (Equal a1 a2) = (==) <$> v1 <*> v2
+evalBoolean s (Equal a1 a2) = liftA2 (==) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (NotEqual a1 a2) = (/=) <$> v1 <*> v2
+evalBoolean s (NotEqual a1 a2) = liftA2 (/=) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (Less a1 a2) = (<) <$> v1 <*> v2
+evalBoolean s (Less a1 a2) = liftA2 (<) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (LessEqual a1 a2) = (<=) <$> v1 <*> v2
+evalBoolean s (LessEqual a1 a2) = liftA2 (<=) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (Greater a1 a2) = (>) <$> v1 <*> v2
+evalBoolean s (Greater a1 a2) = liftA2 (>) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2
-evalBoolean s (GreaterEqual a1 a2) = (>=) <$> v1 <*> v2
+evalBoolean s (GreaterEqual a1 a2) = liftA2 (>=) v1 v2
   where
     v1 = evalArithmetic s a1
     v2 = evalArithmetic s a2

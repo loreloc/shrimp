@@ -8,27 +8,40 @@ The syntax for the programs written in `shrimp` is expressed using EBNF as follo
 Type ::= "int"
 Integer ::= [0-9]+
 Identifier ::= [a-zA-Z_]+
-ArithmeticExpr ::= Integer
-                 | Identifier
-                 | ArithmeticExpr "+" ArithmeticExpr
-                 | ArithmeticExpr "-" ArithmeticExpr
-                 | ArithmeticExpr "*" ArithmeticExpr
-                 | ArithmeticExpr "/" ArithmeticExpr
-                 | ArithmeticExpr "%" ArithmeticExpr
-BooleanExpr ::= "true" | "false"
-              | "not" BooleanExpr
-              | BooleanExpr "or" BooleanExpr
-              | BooleanExpr "and" BooleanExpr
-              | ArithmeticExpr "eq" ArithmeticExpr
-              | ArithmeticExpr "neq" ArithmeticExpr
-              | ArithmeticExpr "lt" ArithmeticExpr
-              | ArithmeticExpr "gt" ArithmeticExpr
-              | ArithmeticExpr "leq" ArithmeticExpr
-              | ArithmeticExpr "geq" ArithmeticExpr
-Command ::= {Assignment | Branch | Loop}
+
+Program ::= "shrimp" Block
 Block ::= [Command]*
+Command ::= {Assignment | Branch | Loop}
 Assignment ::= Identifier "=" ArithmeticExpr ";"
 Branch ::= "if" "(" BooleanExpr ")" "then" Block {"else" Block} "end if" ";"
 Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while" ";"
-Program ::= "shrimp" Block
+
+ArithmeticExpr ::=
+      ArithmeticTerm "+" ArithmeticExpr
+    | ArithmeticTerm "-" ArithmeticExpr
+ArithmeticTerm ::=
+      ArithmeticFactor "*" ArithmeticTerm
+    | ArithmeticFactor "/" ArithmeticTerm
+    | ArithmeticFactor "%" ArithmeticTerm
+arithmeticFactor ::=
+      Integer
+    | Identifier
+    | "-" ArithmeticExpr
+    | "(" ArithmeticExpr ")"
+
+BooleanExpr ::=
+      BooleanTerm "or" BooleanExpr
+BooleanTerm ::=
+      BooleanFactor "and" BooleanTerm
+BooleanTerm ::=
+      "true"
+    | "false"
+    | "not" BooleanExpr
+    | ArithmetciExpr "eq" ArithmeticExpr
+    | ArithmetciExpr "neq" ArithmeticExpr
+    | ArithmetciExpr "lt" ArithmeticExpr
+    | ArithmetciExpr "gt" ArithmeticExpr
+    | ArithmetciExpr "leq" ArithmeticExpr
+    | ArithmetciExpr "geq" ArithmeticExpr
+    | "(" BooleanExpr ")"
 ```

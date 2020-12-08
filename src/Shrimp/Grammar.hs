@@ -11,6 +11,8 @@ data ArithmeticExpr
     Div ArithmeticExpr ArithmeticExpr
   | -- | Modulus between sub-expression
     Mod ArithmeticExpr ArithmeticExpr
+  | -- | Unary negation
+    Neg ArithmeticExpr
   | -- | Constant integer
     Constant Int
   | -- | Identifier string
