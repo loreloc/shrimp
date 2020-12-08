@@ -1,5 +1,11 @@
 module Shrimp.Interpreter where
 
+import Control.Applicative
+  ( liftA2,
+  )
+import Control.Monad
+  ( join,
+  )
 import Shrimp.Exception
   ( Exception
       ( DivisionByZero,
@@ -7,8 +13,6 @@ import Shrimp.Exception
       ),
     Result (Error, Ok),
     exception,
-    join,
-    liftA2,
   )
 import Shrimp.Grammar
   ( ArithmeticExpr

@@ -1,5 +1,8 @@
 module Shrimp.Parser where
 
+import Control.Applicative
+  ( Alternative (empty, (<|>), many, some),
+  )
 import Shrimp.Grammar
   ( ArithmeticExpr
       ( Add,
@@ -39,15 +42,6 @@ newtype Parser a = Parser (String -> [(a, String)])
 unwrap :: Parser a -> (String -> [(a, String)])
 unwrap (Parser p) = p
 
--- | Define an augment monad class
-class Monad m => AugmentMonad m where
-  zero :: m a
-  (<|>) :: m a -> m a -> m a
-  many :: m a -> m [a]
-  some :: m a -> m [a]
-  many p = some p <|> pure []
-  some p = (:) <$> p <*> many p
-
 -- | Define the functor instance
 instance Functor Parser where
   fmap f p =
@@ -77,8 +71,8 @@ instance Monad Parser where
       )
 
 -- | Define the augment monad instance
-instance AugmentMonad Parser where
-  zero = Parser (const [])
+instance Alternative Parser where
+  empty = Parser (const [])
   (<|>) p q =
     Parser
       ( \cs -> case unwrap p cs of
@@ -97,7 +91,7 @@ item =
 
 -- | Conditional function that consume a character
 satisfy :: (Char -> Bool) -> Parser Char
-satisfy p = do c <- item; if p c then return c else zero
+satisfy p = do c <- item; if p c then return c else empty
 
 -- | Parse token
 token :: Parser a -> Parser a
@@ -175,9 +169,8 @@ assignment = do
   d <- identifier
   symbol '='
   a <- arithmeticExpr
-  let p = Assignment d a
   symbol ';'
-  return p
+  return (Assignment d a)
 
 -- | Parse a branch command
 branch :: Parser Command
@@ -194,7 +187,7 @@ branch =
     keyword "end if"
     symbol ';'
     return (Branch b c1 c2)
-  <|> 
+  <|>
   do
     keyword "if"
     symbol '('
