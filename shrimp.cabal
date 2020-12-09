@@ -30,6 +30,7 @@ library
       Shrimp.Optimizer
       Shrimp.Parser
       Shrimp.State
+      Shrimp.Utils
   other-modules:
       Paths_shrimp
   hs-source-dirs:

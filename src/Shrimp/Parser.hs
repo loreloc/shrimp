@@ -1,12 +1,12 @@
 module Shrimp.Parser where
 
-import Control.Applicative (Alternative (empty, many, some, (<|>)))
 import Shrimp.Grammar
   ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
     Block,
     BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
     Command (Assignment, Branch, Loop, Skip),
   )
+import Shrimp.Utils (Alternative (empty, many, some, (<|>)))
 
 -- | Define the parser type
 newtype Parser a = Parser (String -> [(a, String)])
