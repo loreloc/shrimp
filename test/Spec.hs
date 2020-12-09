@@ -8,7 +8,7 @@ testState name filepath variables = do
   let (program, message) = Parser.parse source
   if not $ null message
     then do
-      putStrLn (name ++ " - parser error:")
+      putStrLn (name ++ " - parse error:")
       print message
     else do
       let state = Interpreter.run program
