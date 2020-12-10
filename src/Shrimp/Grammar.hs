@@ -17,7 +17,7 @@ data ArithmeticExpr
     Constant Int
   | -- | Identifier string
     Identifier String
-  deriving (Show)
+  deriving (Eq, Show)
 
 data BooleanExpr
   = -- | Ground True and False
@@ -40,7 +40,7 @@ data BooleanExpr
     LessEqual ArithmeticExpr ArithmeticExpr
   | -- | Less than or equal arithmetic operator
     GreaterEqual ArithmeticExpr ArithmeticExpr
-  deriving (Show)
+  deriving (Eq, Show)
 
 -- | Commands declaration
 data Command
@@ -52,7 +52,7 @@ data Command
     Branch BooleanExpr Block Block
   | -- | Loop command
     Loop BooleanExpr Block
-  deriving (Show)
+  deriving (Eq, Show)
 
 -- | Block declaration
 type Block = [Command]

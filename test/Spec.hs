@@ -1,4 +1,11 @@
+import Shrimp.Grammar
+  ( ArithmeticExpr (..),
+    Block,
+    BooleanExpr (..),
+    Command (..),
+  )
 import qualified Shrimp.Interpreter as Interpreter
+import qualified Shrimp.Optimizer as Optimizer
 import qualified Shrimp.Parser as Parser
 import qualified Shrimp.State as State
 
@@ -24,6 +31,16 @@ testState name filepath variables = do
             (Just v') -> v == v'
             Nothing -> False
         )
+
+testOptimization :: String -> Block -> Block -> IO ()
+testOptimization name source target = do
+  let result = Optimizer.optimize source
+  if result == target
+    then do
+      putStrLn (name ++ " - passed")
+    else do
+      putStrLn (name ++ " - failed:")
+      print result
 
 testFactorial :: IO ()
 testFactorial = testState "Factorial" filepath variables
@@ -55,6 +72,31 @@ testTripleNeg = testState "TripleNeg" filepath variables
     filepath = "examples/tripleneg.shr"
     variables = [("x", -1816), ("y", 42)]
 
+testArithmetic :: IO ()
+testArithmetic = testOptimization "ArithmeticOpt" source target
+  where
+    source =
+      [ Assignment "x" (Add (Mul (Constant 5) (Constant 2)) (Constant 6)),
+        Assignment "y" (Div (Identifier "x") (Sub (Constant 9) (Constant 1)))
+      ]
+    target =
+      [ Assignment "x" (Constant 16),
+        Assignment "y" (Div (Identifier "x") (Constant 8))
+      ]
+
+testBoolean :: IO ()
+testBoolean = testOptimization "BooleanOpt" source target
+  where
+    source =
+      [ Branch (Not (Not (Or (Boolean True) (Boolean False))))
+        [Skip, Assignment "x" (Constant 1), Skip]
+        [Assignment "y" (Constant 2)]
+      ]
+    target =
+      [ Assignment "x" (Constant 1)
+      ]
+    
+
 main :: IO ()
 main = do
   testFactorial
@@ -62,3 +104,5 @@ main = do
   testCalculator
   testEuclid
   testTripleNeg
+  testArithmetic
+  testBoolean
