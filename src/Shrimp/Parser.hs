@@ -133,7 +133,7 @@ command :: Parser Command
 command = assignment <|> branch <|> loop <|> skip
 
 -- | Parse a command block
-block :: Parser [Command]
+block :: Parser Block
 block = many command
 
 -- | Parse an assignment command
