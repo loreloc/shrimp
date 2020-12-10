@@ -1,19 +1,17 @@
 module Shrimp.Parser where
 
 import Shrimp.Grammar
-  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
+  ( ArithmeticExpr (..),
     Block,
-    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
-    Command (Assignment, Branch, Loop, Skip),
+    BooleanExpr (..),
+    Command (..),
   )
-import Shrimp.Utils (Alternative (empty, many, some, (<|>)))
+import Shrimp.Utils
+  ( Alternative (empty, many, some, (<|>))
+  )
 
 -- | Define the parser type
-newtype Parser a = Parser (String -> [(a, String)])
-
--- | Define the parser unwrap function
-unwrap :: Parser a -> (String -> [(a, String)])
-unwrap (Parser p) = p
+newtype Parser a = Parser {unwrap :: String -> [(a, String)]}
 
 -- | Define the functor instance
 instance Functor Parser where
@@ -26,7 +24,7 @@ instance Functor Parser where
 
 -- | Define the applicative instance
 instance Applicative Parser where
-  pure v = Parser (\cs -> [(v, cs)])
+  pure a = Parser (\cs -> [(a, cs)])
   (<*>) p q =
     Parser
       ( \cs -> case unwrap p cs of
@@ -36,6 +34,7 @@ instance Applicative Parser where
 
 -- | Define the monad instance
 instance Monad Parser where
+  return a = pure a
   (>>=) p f =
     Parser
       ( \cs -> case unwrap p cs of
@@ -50,8 +49,14 @@ instance Alternative Parser where
     Parser
       ( \cs -> case unwrap p cs of
           [] -> unwrap q cs
-          ((a, cs) : _) -> [(a, cs)]
+          (x : _) -> [x]
       )
+
+-- | Parse a string
+parse :: String -> (Block, String)
+parse cs = case unwrap program cs of
+  [] -> errorWithoutStackTrace "parsing error"
+  [(b, cs)] -> (b, cs)
 
 -- | Item function that consumes a character
 item :: Parser Char
@@ -117,12 +122,6 @@ isLetter c
   | c `elem` ['A' .. 'Z'] = True
   | c == '_' = True
   | otherwise = False
-
--- | Parse a string
-parse :: String -> (Block, String)
-parse cs = case unwrap program cs of
-  [] -> errorWithoutStackTrace "parsing error"
-  [(b, cs)] -> (b, cs)
 
 -- | Parse a program
 program :: Parser Block
