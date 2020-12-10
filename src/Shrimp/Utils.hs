@@ -1,13 +1,17 @@
 module Shrimp.Utils where
 
--- | Alternative class
-class (Applicative f) => Alternative f where
-  empty :: f a
-  (<|>) :: f a -> f a -> f a
-  some :: f a -> f [a]
-  some v = liftA2 (:) v (some v <|> pure [])
-  many :: f a -> f [a]
-  many v = liftA2 (:) v (many v) <|> pure []
+-- | Monad plus class
+class (Monad m) => MonadPlus m where
+  zero :: m a
+  plus :: m a -> m a -> m a
+
+-- | Monad alternative class
+class (MonadPlus m) => MonadAlternative m where
+  (<|>) :: m a -> m a -> m a
+  many :: m a -> m [a]
+  many m = some m <|> return []
+  some :: m a -> m [a]
+  some m = liftA2 (:) m (many m)
 
 -- | Binary applicative lift
 liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c

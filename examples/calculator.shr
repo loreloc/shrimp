@@ -11,8 +11,6 @@ else
     else
         if (op eq 2) then
             result = x * y;
-        else
-            result = 0-999999;
         end if;
     end if;
 end if;
