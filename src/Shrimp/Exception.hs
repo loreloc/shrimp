@@ -7,7 +7,11 @@ data Exception
     DivisionByZero
   | -- | Define an undeclared variable exception
     UndeclaredVariable String
-  deriving (Show)
+
+instance Show Exception where
+  show InfiniteLoop = "Infinite Loop"
+  show DivisionByZero = "Division By Zero"
+  show (UndeclaredVariable d) = "Undeclared Variable" ++ ": " ++ d
 
 -- | Define a result data structure
 data Result a = Ok a | Error Exception
