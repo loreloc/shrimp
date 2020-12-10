@@ -1,13 +1,9 @@
 module Main where
 
-import qualified Shrimp.Interpreter as Interpreter
-import qualified Shrimp.Parser as Parser
+import Shrimp.Exception (Result (Error, Ok), exception)
+import Shrimp.Interpreter (run)
+import Shrimp.Parser (parse)
 import System.Environment (getArgs)
-
-help :: IO ()
-help = do
-  putStrLn "🦐 The Shrimp Interpreter 🦐"
-  putStrLn "Usage:\tshrimp <program>.shr"
 
 main :: IO ()
 main = do
@@ -16,10 +12,23 @@ main = do
     then help
     else do
       source <- readFile $ head args
-      let (program, message) = Parser.parse source
+      interpret source
+
+help :: IO ()
+help = do
+  putStrLn "🦐 The Shrimp Interpreter 🦐"
+  putStrLn "Usage:\tshrimp <program>.shr"
+
+interpret :: String -> IO ()
+interpret source =
+  case parse source of
+    Ok (program, message) -> do
       if null message
         then do
-          let state = Interpreter.run program
+          let state = run program
           putStrLn "Memory state:"
           print state
-        else print message
+        else do
+          putStrLn "Parsing failed:"
+          print message
+    Error e -> exception e

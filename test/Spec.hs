@@ -4,37 +4,40 @@ import Shrimp.Grammar
     BooleanExpr (..),
     Command (..),
   )
-import qualified Shrimp.Interpreter as Interpreter
-import qualified Shrimp.Optimizer as Optimizer
-import qualified Shrimp.Parser as Parser
-import qualified Shrimp.State as State
+import Shrimp.Exception (Result (Error, Ok), exception)
+import Shrimp.Interpreter (run)
+import Shrimp.Optimizer (optimize)
+import Shrimp.Parser (parse)
+import Shrimp.State (search)
 
 testState :: String -> String -> [(String, Int)] -> IO ()
 testState name filepath variables = do
   source <- readFile filepath
-  let (program, message) = Parser.parse source
-  if not $ null message
-    then do
-      putStrLn (name ++ " - parse error:")
-      print message
-    else do
-      let state = Interpreter.run program
-      if and $ checks state variables
-        then putStrLn (name ++ " - passed")
+  case parse source of
+    Ok (program, message) -> do
+      if not $ null message
+        then do
+          putStrLn (name ++ " - parsing failed:")
+          print message
         else do
-          putStrLn (name ++ " - failed:")
-          print state
+          let state = run program
+          if and $ checks state variables
+            then putStrLn (name ++ " - passed")
+            else do
+              putStrLn (name ++ " - failed:")
+              print state
+    Error e -> exception e
   where
     checks s =
       map
-        ( \(d, v) -> case State.search d s of
+        ( \(d, v) -> case search d s of
             (Just v') -> v == v'
             Nothing -> False
         )
 
 testOptimization :: String -> Block -> Block -> IO ()
 testOptimization name source target = do
-  let result = Optimizer.optimize source
+  let result = optimize source
   if result == target
     then do
       putStrLn (name ++ " - passed")

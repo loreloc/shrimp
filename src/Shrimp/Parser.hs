@@ -2,6 +2,10 @@
 
 module Shrimp.Parser where
 
+import Shrimp.Exception
+  ( Exception (EmptyProgram),
+    Result (Error, Ok),
+  )
 import Shrimp.Grammar
   ( ArithmeticExpr (..),
     Block,
@@ -45,10 +49,10 @@ instance MonadAlternative Parser where
       )
 
 -- | Parse a string
-parse :: String -> (Block, String)
+parse :: String -> Result (Block, String)
 parse cs = case unwrap program cs of
-  [] -> errorWithoutStackTrace "parsing error"
-  [(b, cs)] -> (b, cs)
+  [] -> Error EmptyProgram
+  [(b, cs)] -> Ok (b, cs)
 
 -- | Item function that consumes a character
 item :: Parser Char

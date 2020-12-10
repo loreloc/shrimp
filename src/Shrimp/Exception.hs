@@ -1,7 +1,9 @@
 module Shrimp.Exception where
 
 data Exception
-  = -- | Define an infinite loop exception
+  = -- | Define the empty program exception
+    EmptyProgram
+  | -- | Define an infinite loop exception
     InfiniteLoop
   | -- | Define a division by zero exception
     DivisionByZero
@@ -9,6 +11,7 @@ data Exception
     UndeclaredVariable String
 
 instance Show Exception where
+  show EmptyProgram = "Empty Program"
   show InfiniteLoop = "Infinite Loop"
   show DivisionByZero = "Division By Zero"
   show (UndeclaredVariable d) = "Undeclared Variable" ++ ": " ++ d
