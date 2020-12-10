@@ -5,10 +5,10 @@ import Shrimp.Exception
     exception,
   )
 import Shrimp.Grammar
-  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
+  ( ArithmeticExpr (..),
     Block,
-    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
-    Command (Assignment, Branch, Loop, Skip),
+    BooleanExpr (..),
+    Command (..),
   )
 
 -- | Optimize a block of instructions

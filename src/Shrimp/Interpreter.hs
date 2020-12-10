@@ -6,10 +6,10 @@ import Shrimp.Exception
     exception,
   )
 import Shrimp.Grammar
-  ( ArithmeticExpr (Add, Constant, Div, Identifier, Mod, Mul, Neg, Sub),
+  ( ArithmeticExpr (..),
     Block,
-    BooleanExpr (And, Boolean, Equal, Greater, GreaterEqual, Less, LessEqual, Not, NotEqual, Or),
-    Command (Assignment, Branch, Loop, Skip),
+    BooleanExpr (..),
+    Command (..),
   )
 import Shrimp.Optimizer (optimize)
 import Shrimp.State (State (..), empty, insert, search)
