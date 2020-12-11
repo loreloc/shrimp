@@ -70,8 +70,98 @@ The \textbf{interpreter} execute the semantics present in an intermediate repres
 The basic idea is to use a \textbf{state} (or environment) that collects the values of the variables during the execution of the program.
 The result of the interpretation is the resulting state, that is a set of assignments to the variables.
 
+\section*{The Language Syntax}
+The syntax for the \textbf{Shrimp} programming language is a context-free grammar.
+So, it can be denoted using EBNF (Extended Backus Naur Form) as following:
+\begin{lstlisting}[language=C, style=custom-style]
+Type ::= "int"
+Integer ::= [0-9]+
+Identifier ::= [a-zA-Z_]+
+Program ::= "shrimp" Block
+Block ::= [Command]*
+Command ::= {Assignment | Branch | Loop}
+Assignment ::= Identifier "=" ArithmeticExpr ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block
+           ["else" Block] "end if" ";"
+Loop ::= "while" "(" BooleanExpr ")" "do"
+         Block "end while" ";"
+
+ArithmeticExpr ::=
+    ArithmeticTerm "+" ArithmeticExpr
+  | ArithmeticTerm "-" ArithmeticExpr
+  | ArithmetciTerm
+ArithmeticTerm ::=
+    ArithmeticFactor "*" ArithmeticTerm
+  | ArithmeticFactor "/" ArithmeticTerm
+  | ArithmeticFactor "%" ArithmeticTerm
+  | ArithmeticFactor
+ArithmeticFactor ::=
+    Integer
+  | Identifier
+  | "-" ArithmeticExpr
+  | "(" ArithmeticExpr ")"
+
+BooleanExpr ::=
+    BooleanTerm "or" BooleanExpr
+  | BooleanTerm
+BooleanTerm ::=
+    BooleanFactor "and" BooleanTerm
+  | BooleanFactor
+
+BooleanFactor ::=
+    "true"
+  | "false"
+  | "not" BooleanExpr
+  | ArithmetciExpr "eq" ArithmeticExpr
+  | ArithmetciExpr "neq" ArithmeticExpr
+  | ArithmetciExpr "lt" ArithmeticExpr
+  | ArithmetciExpr "gt" ArithmeticExpr
+  | ArithmetciExpr "leq" ArithmeticExpr
+  | ArithmetciExpr "geq" ArithmeticExpr
+  | "(" BooleanExpr ")"
+\end{lstlisting}
+Some of the non-terminals of this context-free grammar are reported directly in Haskell.
+That is, I defined an \textit{abstract syntax tree} that also represents the intermediate representation of a program.
+This intermediate representation will be the result of the parser.
+Moreover, the presence of an intermediate representation permits us to apply optimizations \textit{at prior} respect to the interpretation step.
+The following code snippet contains the definition of the \textit{abstarct syntax tree}.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+data ArithmeticExpr
+  = Add ArithmeticExpr ArithmeticExpr
+  | Sub ArithmeticExpr ArithmeticExpr
+  | Mul ArithmeticExpr ArithmeticExpr
+  | Div ArithmeticExpr ArithmeticExpr
+  | Mod ArithmeticExpr ArithmeticExpr
+  | Neg ArithmeticExpr
+  | Constant Int
+  | Identifier String
+  deriving (Eq, Show)
+
+data BooleanExpr
+  = Boolean Bool
+  | Not BooleanExpr
+  | Or BooleanExpr BooleanExpr
+  | And BooleanExpr BooleanExpr
+  | Equal ArithmeticExpr ArithmeticExpr
+  | NotEqual ArithmeticExpr ArithmeticExpr
+  | Less ArithmeticExpr ArithmeticExpr
+  | Greater ArithmeticExpr ArithmeticExpr
+  | LessEqual ArithmeticExpr ArithmeticExpr
+  | GreaterEqual ArithmeticExpr ArithmeticExpr
+  deriving (Eq, Show)
+
+data Command
+  = Skip
+  | Assignment String ArithmeticExpr
+  | Branch BooleanExpr Block Block
+  | Loop BooleanExpr Block
+  deriving (Eq, Show)
+
+type Block = [Command]
+\end{lstlisting}
+
 \section*{The Parser}
-The parser can be viewed as a function from a string to a list of pairs of values and strings.
+The parser can be viewed as a function from a string to a list of pairs of values and strings (Graham Hutton).
 \begin{lstlisting}[language=Haskell, style=custom-style]
 newtype Parser a = Parser {unwrap :: String -> [(a, String)]}
 \end{lstlisting}
@@ -88,7 +178,36 @@ instance Applicative Parser where
 pure a = Parser (\cs -> [(a, cs)])
 p <*> q = Parser (\cs -> concat
   [unwrap (fmap a q) cs' | (a, cs') <- unwrap p cs])
+\end{lstlisting}
 
+The functor implementation for the parser implements the \texttt{fmap} function, that is the application of a function on a wrapped parser.
+Moreover, the applicative implementation for the parser implement both the function \texttt{pure} and the operator \texttt{<*>}.
+The \texttt{pure} function takes a simple values and wraps it into a parser.
+The \texttt{<*>} operator takes in input a function wrapped in a parser and another parser.
+The result is the application of the wrapped function onto the parser.
+
+The next step is to implement the standard monad interface.
+Moreover, two more interfaces are implemented: \texttt{MonadPlus} and \texttt{MonadAlternative}.
+The \texttt{plus} operator defined on parsers concatenates the result of each one.
+Moreover, the \texttt{MonadAlternative} give us an operator \texttt{<|>} useful for combining parsers in a mutually exclusive way.
+The classes definition can be found in the following code snippet.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+class (Monad m) => MonadPlus m where
+zero :: m a
+plus :: m a -> m a -> m a
+
+class (MonadPlus m) => MonadAlternative m where
+(<|>) :: m a -> m a -> m a
+many :: m a -> m [a]
+many m = some m <|> return []
+some :: m a -> m [a]
+some m = liftA2 (:) m (many m)
+\end{lstlisting}
+Note that the function \texttt{liftA2} is the composition of \texttt{fmap} and the applicative operator \texttt{<*>}.
+The functions \texttt{many} and \texttt{some} are called \textit{combinators} and are used to define the concept of repeated parsing.
+The \texttt{many} function refers to zero to any number of applications of a parser while the \texttt{some} function refers to at least one to any number of applications of a parser.
+The implementation for the parser of the monad sequencing and the other functions and operators described before is the following.
+\begin{lstlisting}[language=Haskell, style=custom-style]
 instance Monad Parser where
 return a = pure a
 p >>= f = Parser (\cs -> concat
@@ -104,25 +223,13 @@ instance MonadAlternative Parser where
     [] -> []
     (x : _) -> [x])
 \end{lstlisting}
-The \texttt{plus} operator defined on parsers concatenates the result of each one.
-Moreover, the alternative monad give us an operator \texttt{<|>} useful for combining parsers in a mutually exclusive way.
-Plus monad and alternative monad classes are defined as following.
-\begin{lstlisting}[language=Haskell, style=custom-style]
-class (Monad m) => MonadPlus m where
-zero :: m a
-plus :: m a -> m a -> m a
 
-class (MonadPlus m) => MonadAlternative m where
-(<|>) :: m a -> m a -> m a
-many :: m a -> m [a]
-many m = some m <|> return []
-some :: m a -> m [a]
-some m = liftA2 (:) m (many m)
-\end{lstlisting}
-where \texttt{liftA2} is the composition of \texttt{fmap} and the applicative operator \texttt{<*>}.
-The functions \texttt{many} and \texttt{some} are called \textit{combinators} and are used to define the concept of repeated parsing.
-Using a monadic definition of parser, it permits us to easily build a parser for each structure of the programming language.
+The \texttt{zero} operator defines what is an empty parser.
+Note that in this context an empty parser is a \textit{failed} parser, that is a parser that results from a syntactical error.
+The \texttt{plus} operator concatenates the results of two individual parsers.
+Using the monadic definition of parser, it permits us to easily build a parser for each structure of the programming language, without having to handle the eventual parsing errors individually.
 For example, it's possible to define a parser for symbols, identifiers and integers as in the following code snippet.
+Moreover, since the parser implements the \texttt{MonadAlternative} interface described above, the combination of multiple parsers is straightforward and easily parallelizable.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 item :: Parser Char
 item = Parser (\case "" -> []; (c : cs) -> [(c, cs)])
@@ -145,10 +252,11 @@ constant = read <$> token (some $ satisfy isDigit)
 char :: Char -> Parser Char
 char c = satisfy (c ==)
 \end{lstlisting}
-That is, I firstly defined an \texttt{item} function that reads a character from the string.
+That is, I firstly defined a \texttt{item} function that reads a character from the string.
 Then I defined a function called \texttt{satisfy} that apply a constraint to the character read by the parser.
-In the end, using both the combinators \texttt{many} and \texttt{some} I built parsers for identifiers, constants and also spaces that are the main blocks of the context-free grammar.
-In the same way, I also defined parsers for keywords and symbols.
+This function returns an \texttt{zero} parser if the constraint is not satisfied.
+In the end, using both the combinators \texttt{many} and \texttt{some}, I built parsers for identifiers, constants and also spaces that are the main blocks of the context-free grammar already defined.
+In the same way, it's possible to define a parser for other constructs, such as keywords and symbols.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 keyword :: String -> Parser String
 keyword cs = token $ word cs
@@ -280,54 +388,5 @@ Furthermore, this approach is also used for \texttt{while-do} commands.
 That is, if the condition of a \texttt{while-do} command is always \textit{false} then the entire statement is completely removed.
 However, if the condition is always \textit{true} then an exception named \textit{Infinite Loop} is raised.
 In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
-
-\section*{The Language Syntax}
-The syntax for the \textbf{Shrimp} programming language can be denoted using EBNF (Extended Backus Naur Form) as following:
-\begin{lstlisting}[language=C, style=custom-style]
-Type ::= "int"
-Integer ::= [0-9]+
-Identifier ::= [a-zA-Z_]+
-Program ::= "shrimp" Block
-Block ::= [Command]*
-Command ::= {Assignment | Branch | Loop}
-Assignment ::= Identifier "=" ArithmeticExpr ";"
-Branch ::= "if" "(" BooleanExpr ")" "then" Block
-           ["else" Block] "end if" ";"
-Loop ::= "while" "(" BooleanExpr ")" "do"
-         Block "end while" ";"
-
-ArithmeticExpr ::=
-      ArithmeticTerm "+" ArithmeticExpr
-    | ArithmeticTerm "-" ArithmeticExpr
-    | ArithmetciTerm
-ArithmeticTerm ::=
-      ArithmeticFactor "*" ArithmeticTerm
-    | ArithmeticFactor "/" ArithmeticTerm
-    | ArithmeticFactor "%" ArithmeticTerm
-    | ArithmeticFactor
-arithmeticFactor ::=
-      Integer
-    | Identifier
-    | "-" ArithmeticExpr
-    | "(" ArithmeticExpr ")"
-
-BooleanExpr ::=
-      BooleanTerm "or" BooleanExpr
-    | BooleanTerm
-BooleanTerm ::=
-      BooleanFactor "and" BooleanTerm
-    | BooleanFactor
-BooleanFactor ::=
-      "true"
-    | "false"
-    | "not" BooleanExpr
-    | ArithmetciExpr "eq" ArithmeticExpr
-    | ArithmetciExpr "neq" ArithmeticExpr
-    | ArithmetciExpr "lt" ArithmeticExpr
-    | ArithmetciExpr "gt" ArithmeticExpr
-    | ArithmetciExpr "leq" ArithmeticExpr
-    | ArithmetciExpr "geq" ArithmeticExpr
-    | "(" BooleanExpr ")"
-\end{lstlisting}
 
 \end{document}
