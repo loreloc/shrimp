@@ -4,15 +4,22 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{geometry}
 
-% fe7a47
+\geometry{margin=1in}
+
 \definecolor{background}{rgb}{1.00, 1.00, 1.00}
 \definecolor{brightred}{rgb}{0.80, 0.03, 0.16}
 \definecolor{brightorange}{rgb}{0.79, 0.28, 0.08}
 
-\lstdefinestyle{ebnf-style}{
+\lstdefinestyle{custom-style}{
+    frame=single,
+    upquote=true,
+    rulecolor=\color{gray},
     backgroundcolor=\color{background},
     stringstyle=\color{brightred},
+    keywordstyle=\color{brightorange},
+    numberstyle=\scriptsize\color{gray},
     basicstyle=\ttfamily\footnotesize,
     literate=%
         {|}{{{\color{brightorange}|}}}1
@@ -31,7 +38,7 @@
 \date{}
 \title{
     \includegraphics[width=0.67\linewidth]{logo.pdf} \\
-    an interpreted imperative programming language that wants to believe
+    an interpreted imperative programming \\ language that wants to believe
 }
 \author{Lorenzo Loconte}
 
@@ -43,8 +50,6 @@
 \textbf{Shrimp} uses an \textit{eager evaluation strategy}.
 In order to ensure that, the interpreter executes the code using the \textit{call by value} method.
 
-\clearpage
-
 \section*{Software Modules}
 The program is composed by three main components:
 \begin{itemize}
@@ -54,22 +59,231 @@ The program is composed by three main components:
 \end{itemize}
 
 The \textbf{parser} takes in input the source code and convert it to an intermediate representation.
-The intermediate representation (IR) have the structure of a n-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and literals on the leaves.
+The intermediate representation (IR) have the structure of a n-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and constants on the leaves.
 
 The \textbf{optimizer} takes in input the intermediate representation given by the parser.
 The result of the optimizer is an \textit{optimized} intermediate representation.
-It evaluates the constant expressions (both arithmetic and boolean) that might be present in the source code and replace them with literals.
+It evaluates the constant expressions (both arithmetic and boolean) that might be present in the source code and replace them with the resulting constants.
 The optimizer also checks for empty commands block and useless branch statements.
 
 The \textbf{interpreter} execute the semantics present in an intermediate representation.
 The basic idea is to use a \textbf{state} (or environment) that collects the values of the variables during the execution of the program.
 The result of the interpretation is the resulting state, that is a set of assignments to the variables.
 
-\clearpage
+\section*{The Parser}
+The parser can be viewed as a function from a string to a list of pairs of values and strings.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+newtype Parser a = Parser {unwrap :: String -> [(a, String)]}
+\end{lstlisting}
+Note that the parser have a special function called \texttt{unwrap} that takes the function out from the parser.
+The parser is implemented in a ``monadic'' way.
+That is, I implemented the following interfaces: \textit{monad plus} and \textit{monad alternative} as suggested in \textit{Monadic Parsing in Haskell} (Hutton \& Meijer).
+In order to implement the monad interface I also implemented the \textit{functor} and \textit{applicative} interfaces as in the following code snippet.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+instance Functor Parser where
+fmap f p = Parser (\cs ->
+  [(f a, cs') | (a, cs') <- unwrap p cs])
 
-\section*{Language Syntax}
+instance Applicative Parser where
+pure a = Parser (\cs -> [(a, cs)])
+p <*> q = Parser (\cs -> concat
+  [unwrap (fmap a q) cs' | (a, cs') <- unwrap p cs])
+
+instance Monad Parser where
+return a = pure a
+p >>= f = Parser (\cs -> concat
+  [unwrap (f a) cs' | (a, cs') <- unwrap p cs])
+
+instance MonadPlus Parser where
+zero = Parser (const [])
+p `plus` q = Parser (\cs -> unwrap p cs ++ unwrap q cs)
+
+instance MonadAlternative Parser where
+(<|>) p q = Parser (\cs ->
+  case unwrap (p `plus` q) cs of
+    [] -> []
+    (x : _) -> [x])
+\end{lstlisting}
+The \texttt{plus} operator defined on parsers concatenates the result of each one.
+Moreover, the alternative monad give us an operator \texttt{<|>} useful for combining parsers in a mutually exclusive way.
+Plus monad and alternative monad classes are defined as following.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+class (Monad m) => MonadPlus m where
+zero :: m a
+plus :: m a -> m a -> m a
+
+class (MonadPlus m) => MonadAlternative m where
+(<|>) :: m a -> m a -> m a
+many :: m a -> m [a]
+many m = some m <|> return []
+some :: m a -> m [a]
+some m = liftA2 (:) m (many m)
+\end{lstlisting}
+where \texttt{liftA2} is the composition of \texttt{fmap} and the applicative operator \texttt{<*>}.
+The functions \texttt{many} and \texttt{some} are called \textit{combinators} and are used to define the concept of repeated parsing.
+Using a monadic definition of parser, it permits us to easily build a parser for each structure of the programming language.
+For example, it's possible to define a parser for symbols, identifiers and integers as in the following code snippet.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+item :: Parser Char
+item = Parser (\case "" -> []; (c : cs) -> [(c, cs)])
+
+satisfy :: (Char -> Bool) -> Parser Char
+satisfy p = do c <- item; if p c then return c else zero
+
+token :: Parser a -> Parser a
+token p = do space; v <- p; space; return v
+
+space :: Parser String
+space = many $ satisfy isSpace
+
+identifier :: Parser String
+identifier = token $ some $ satisfy isLetter
+
+constant :: Parser Int
+constant = read <$> token (some $ satisfy isDigit)
+
+char :: Char -> Parser Char
+char c = satisfy (c ==)
+\end{lstlisting}
+That is, I firstly defined an \texttt{item} function that reads a character from the string.
+Then I defined a function called \texttt{satisfy} that apply a constraint to the character read by the parser.
+In the end, using both the combinators \texttt{many} and \texttt{some} I built parsers for identifiers, constants and also spaces that are the main blocks of the context-free grammar.
+In the same way, I also defined parsers for keywords and symbols.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+keyword :: String -> Parser String
+keyword cs = token $ word cs
+
+word :: String -> Parser String
+word [c] = do char c; return [c]
+word (c : cs) = do char c; word cs; return (c : cs)
+
+symbol :: Char -> Parser Char
+symbol c = token $ char c
+\end{lstlisting}
+In order to build parsers for both arithmetic and boolean expression the \texttt{<|>} operator between parsers is used.
+So, I define the parser for arithmetic expressions using other sub-parsers that are used in order to maintain the operators precedence.
+The parser for boolean expressions is similar to the parser for arithmetic expressions and so it's omitted.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+arithmeticExpr :: Parser ArithmeticExpr
+arithmeticExpr = do
+  a <- arithmeticTerm
+    do symbol '+'; Add a <$> arithmeticExpr
+    <|> do symbol '-'; Sub a <$> arithmeticExpr
+    <|> do return a
+
+arithmeticTerm :: Parser ArithmeticExpr
+arithmeticTerm = do
+  a <- arithmeticFactor
+    do symbol '*'; Mul a <$> arithmeticTerm
+    <|> do symbol '/'; Div a <$> arithmeticTerm
+    <|> do symbol '%'; Mod a <$> arithmeticTerm
+    <|> do return a
+
+arithmeticFactor :: Parser ArithmeticExpr
+arithmeticFactor =
+  do Constant <$> constant
+  <|> do Identifier <$> identifier
+  <|> do symbol '-'; Neg <$> arithmeticExpr
+  <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
+\end{lstlisting}
+In the end we have a parser for every command described in the grammar.
+So, I defined a parser for the following commands: \texttt{skip}, \texttt{assignment}, \texttt{if-then-else}, and \texttt{while-do}.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+assignment :: Parser Command
+assignment = do
+  d <- identifier
+  symbol '='
+  a <- arithmeticExpr
+  symbol ';'
+  return (Assignment d a)
+
+branch :: Parser Command
+branch = do
+  keyword "if"
+  symbol '('
+  b <- booleanExpr
+  symbol ')'
+  keyword "then"
+  c1 <- block
+  do
+    keyword "else"
+    c2 <- block
+    keyword "end if"
+    symbol ';'
+    return (Branch b c1 c2)
+    <|> do
+      keyword "end if"
+      symbol ';'
+      return (Branch b c1 [Skip])
+
+loop :: Parser Command
+loop = do
+  keyword "while"
+  symbol '('
+  b <- booleanExpr
+  symbol ')'
+  keyword "do"
+  c <- block
+  keyword "end while"
+  symbol ';'
+  return (Loop b c)
+
+skip :: Parser Command
+skip = do
+  keyword "skip"
+  symbol ';'
+  return Skip
+\end{lstlisting}
+It's important to notice that the grammar also allows for \texttt{if-then} statements (i.e. without the \texttt{else} command block).
+A parser that works on both \texttt{if-then-else} and \texttt{if-then} statements is implemented by combining the two parsers using the \texttt{<|>} operator.
+Moreover, using the \texttt{many} combinator and the \texttt{<|>} operator, the parsers for both multiple commands and a single command are straightforward.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+block :: Parser Block
+block = many command
+
+command :: Parser Command
+command = assignment <|> branch <|> loop <|> skip
+\end{lstlisting}
+The parser for the entire program is defined as in the following code snippet.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+program :: Parser Block
+program = do keyword "shrimp"; block
+
+parse :: String -> Result (Block, String)
+parse cs = case unwrap program cs of
+  [] -> Error EmptyProgram
+  [(b, cs)] -> Ok (b, cs)
+\end{lstlisting}
+
+\section*{The Optimizer}
+The \textit{optimization} process is an intermediate step between the parsing and the interpretation of the program itself.
+Currently, the main optimization step is related to the execution of constant values.
+That is, if an expression in a loop is defined only on constant values, it's better to optimize the computation of that expression by replacing it with the result.
+This procedure is done before the interpretation of the program.
+For example, consider the following arithmetic expression, expressed in intermediate representation, that we wish to optimize.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let expr = Div (
+    (Mul (Identifier "x") (Sub (Constant 5) (Constant 3)))
+    (Add (Constant 9) (Constant 1)))
+\end{lstlisting}
+If we apply the optimization step to this arithmetic expression, we obtain the equivalent but more efficient arithmetic expression.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let expr' = Div (Mul (Identifier "x") (Constant 2)) (Constant 10)
+\end{lstlisting}
+The implementation of the \textit{optimization} process in Haskell is straightforward, due to simple recursion functions.
+A very similar optimization process is also implemented on boolean expressions.
+The \textit{optimization} process also includes a basic optimization on commands such as \texttt{skip}, \texttt{if-then-else} and \texttt{while-do}.
+First of all, all the \texttt{skip} commands are removed from the intermediate representation.
+Moreover, if the condition of a \texttt{if-then-else} command is always \textit{true} then the entire statement is replaced with the first block of commands.
+In a similar way, if the condition is always \textit{false} then the entire statement is replaced with the second block of commands.
+Furthermore, this approach is also used for \texttt{while-do} commands.
+That is, if the condition of a \texttt{while-do} command is always \textit{false} then the entire statement is completely removed.
+However, if the condition is always \textit{true} then an exception named \textit{Infinite Loop} is raised.
+In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
+
+\section*{The Language Syntax}
 The syntax for the \textbf{Shrimp} programming language can be denoted using EBNF (Extended Backus Naur Form) as following:
-\begin{lstlisting}[language=C, style=ebnf-style]
+\begin{lstlisting}[language=C, style=custom-style]
 Type ::= "int"
 Integer ::= [0-9]+
 Identifier ::= [a-zA-Z_]+
