@@ -389,4 +389,121 @@ That is, if the condition of a \texttt{while-do} command is always \textit{false
 However, if the condition is always \textit{true} then an exception named \textit{Infinite Loop} is raised.
 In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
 
+\section*{The Interpreter}
+Finally, the obtained intermediate representation is interpreted by the interpreter.
+The interpreter scan the intermediate representation using \textit{depth-first traversal} on the n-ary tree that compose the intermediate representation itself.
+Before introducing the execution of the interpreter on an intermediate representation, some useful data types are defined in order to handle errors.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+data Exception
+  = EmptyProgram
+  | InfiniteLoop
+  | DivisionByZero
+  | UndeclaredVariable String
+  deriving (Show)
+
+data Result a = Ok a | Error Exception
+
+instance Functor Result where
+  fmap f (Ok v) = Ok (f v)
+  fmap _ (Error e) = Error e
+
+instance Applicative Result where
+  pure v = Ok v
+  (<*>) (Ok f) (Ok v) = Ok (f v)
+  (<*>) (Error e) _ = Error e
+  (<*>) _ (Error e) = Error e
+
+instance Monad Result where
+  (>>=) (Ok v) f = f v
+  (>>=) (Error e) _ = Error e
+
+exception :: Exception -> a
+exception e = errorWithoutStackTrace $ show e
+\end{lstlisting}
+As one can see, the \texttt{Result} data type is a polymorphic type that can be either a \texttt{Ok} or a \texttt{Error}.
+The \texttt{Error} type also encapsulate an exception, one of the listed above.
+Moreover functor, applicative and monad interfaces are implemented in order to apply the needed operators directly on results.
+The main function that executes a block (i.e. a list of command) is reported in the following code snippet.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+execute :: State -> Block -> State
+execute s [] = s
+execute s (Skip : cs) = execute s cs
+execute s ((Assignment d a) : cs) =
+  case evalArithmetic s a of
+    Ok v -> execute s' cs
+      where
+        s' = insert d v s
+    Error e -> exception e
+execute s ((Branch b cs' cs'') : cs) =
+  case evalBoolean s b of
+    Ok True -> execute s (cs' ++ cs)
+    Ok False -> execute s (cs'' ++ cs)
+    Error e -> exception e
+execute s (c@(Loop b cs') : cs) =
+  execute s (Branch b (cs' ++ [c]) [Skip] : cs)
+\end{lstlisting}
+The implementation of the execution of a \texttt{while-do} resembles how it's evaluated in operational semantics, i.e. by ``wrapping'' it in a \texttt{if-then-else} command statement.
+
+The implementation of the evaluation of arithmetic expressions make \textit{heavily} use of the methods exposed by the applicative interface.
+Moreover, the \texttt{liftA2} function is used in order to make the functions more compact.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+evalArithmetic :: State -> ArithmeticExpr -> Result Int
+evalArithmetic _ (Constant v) = Ok v
+evalArithmetic s (Identifier d) =
+  case search d s of
+    Just v -> Ok v
+    Nothing -> Error (UndeclaredVariable d)
+evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Sub a1 a2) = liftA2 (-) v1 v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Mul a1 a2) = liftA2 (*) v1 v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Div a1 a2) = seqM2 safeDiv v1 v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Mod a1 a2) = seqM2 safeMod v1 v2
+  where
+    v1 = evalArithmetic s a1
+    v2 = evalArithmetic s a2
+evalArithmetic s (Neg a) = negate <$> v
+  where
+    v = evalArithmetic s a
+\end{lstlisting}
+In this implementation, I also used the functions \texttt{safeDiv}, \texttt{safeMod} and \texttt{seqM2} which implementation is showed in the following code snippet.
+In other words, the \texttt{seqM2} is a custom function that implements binary sequencing, similarly to the \texttt{>>=} operator.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+safeDiv :: Int -> Int -> Result Int
+safeDiv _ 0 = Error DivisionByZero
+safeDiv u v = Ok (div u v)
+
+safeMod :: Int -> Int -> Result Int
+safeMod _ 0 = Error DivisionByZero
+safeMod u v = Ok (mod u v)
+
+seqM2 :: (Monad m) => (a -> b -> m c) -> m a -> m b -> m c
+seqM2 f x y = join $ liftA2 f x y
+
+join :: (Monad m) => m (m a) -> m a
+join m = m >>= id
+\end{lstlisting}
+The implementation of the evaluation of boolean expressions is very similar to the one for arithmetic expressions, so it's omitted.
+
+\section*{Conclusion}
+The monadic implementation of the parser give us a very simple way of concatenate and combine multiple parsers of sub-grammars.
+Also, it's very easy to extend the grammar of the language in order to include other commands or statements.
+Moreover, the use of an intermediate representation permits us to apply post-processing or optimizations and make the interpretation itself straightforward.
+
+Future works may include the introduction of other types for variables, such as boolean types.
+Another extension of this work consists of adding useful information about the parsing errors, i.e. missing tokens and relevant row and column locations in the source code where the error occurred.
+However, other improvements can be done in the optimization step.
+That is, one can implement more ``aggressive'' optimizations of the intermediate representation based on the expected state of memory of the program during its execution.
+
 \end{document}
