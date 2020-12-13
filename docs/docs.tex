@@ -46,7 +46,7 @@
 \maketitle
 
 \section*{Introduction}
-\textbf{Shrimp} is a simple imperative programming language designed during the course of \textit{Formal Methods for Computer Science} at Universita' degli Studi di Bari Aldo Moro.
+\textbf{Shrimp} is a very simple and didactic imperative programming language designed during the course of \textit{Formal Methods for Computer Science} at Universita' degli Studi di Bari Aldo Moro.
 \textbf{Shrimp} uses an \textit{eager evaluation strategy}.
 In order to ensure that, the interpreter executes the code using the \textit{call by value} method.
 
@@ -58,17 +58,17 @@ The program is composed by three main components:
     \item The \textbf{interpreter}
 \end{itemize}
 
-The \textbf{parser} takes in input the source code and convert it to an intermediate representation.
-The intermediate representation (IR) have the structure of a n-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and constants on the leaves.
+The \textbf{parser} takes in input the source code and convert it into an intermediate representation.
+The intermediate representation have the structure of a $n$-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and integer constants on the leaves.
 
 The \textbf{optimizer} takes in input the intermediate representation given by the parser.
 The result of the optimizer is an \textit{optimized} intermediate representation.
 It evaluates the constant expressions (both arithmetic and boolean) that might be present in the source code and replace them with the resulting constants.
-The optimizer also checks for empty commands block and useless branch statements.
+The optimizer also checks for empty command blocks and useless branch statements and removes (or optimize) them.
 
 The \textbf{interpreter} execute the semantics present in an intermediate representation.
 The basic idea is to use a \textbf{state} (or environment) that collects the values of the variables during the execution of the program.
-The result of the interpretation is the resulting state, that is a set of assignments to the variables.
+The result of the interpretation is the resulting state, that is a set of ground integer assignments to the variables.
 
 \section*{The Language Syntax}
 The syntax for the \textbf{Shrimp} programming language is a context-free grammar.
@@ -181,8 +181,8 @@ p <*> q = Parser (\cs -> concat
 \end{lstlisting}
 
 The functor implementation for the parser implements the \texttt{fmap} function, that is the application of a function on a wrapped parser.
-Moreover, the applicative implementation for the parser implement both the function \texttt{pure} and the operator \texttt{<*>}.
-The \texttt{pure} function takes a simple values and wraps it into a parser.
+Moreover, the applicative implementation for the parser introduces both the function \texttt{pure} and the operator \texttt{<*>}.
+The \texttt{pure} function takes a simple value and wraps it into a parser.
 The \texttt{<*>} operator takes in input a function wrapped in a parser and another parser.
 The result is the application of the wrapped function onto the parser.
 
@@ -206,7 +206,7 @@ some m = liftA2 (:) m (many m)
 Note that the function \texttt{liftA2} is the composition of \texttt{fmap} and the applicative operator \texttt{<*>}.
 The functions \texttt{many} and \texttt{some} are called \textit{combinators} and are used to define the concept of repeated parsing.
 The \texttt{many} function refers to zero to any number of applications of a parser while the \texttt{some} function refers to at least one to any number of applications of a parser.
-The implementation for the parser of the monad sequencing and the other functions and operators described before is the following.
+The implementation for the parser of the \texttt{bind} operator and the other functions described before is the following.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 instance Monad Parser where
 return a = pure a
@@ -224,12 +224,12 @@ instance MonadAlternative Parser where
     (x : _) -> [x])
 \end{lstlisting}
 
-The \texttt{zero} operator defines what is an empty parser.
+The \texttt{zero} function defines what is an empty parser.
 Note that in this context an empty parser is a \textit{failed} parser, that is a parser that results from a syntactical error.
-The \texttt{plus} operator concatenates the results of two individual parsers.
+The \texttt{plus} function concatenates the results of two individual parsers.
 Using the monadic definition of parser, it permits us to easily build a parser for each structure of the programming language, without having to handle the eventual parsing errors individually.
 For example, it's possible to define a parser for symbols, identifiers and integers as in the following code snippet.
-Moreover, since the parser implements the \texttt{MonadAlternative} interface described above, the combination of multiple parsers is straightforward and easily parallelizable.
+Moreover, since the parser implements the \texttt{MonadAlternative} interface described above, the combination of multiple parsers is straightforward and easily \textbf{parallelizable} by the compiler.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 item :: Parser Char
 item = Parser (\case "" -> []; (c : cs) -> [(c, cs)])
@@ -269,7 +269,7 @@ symbol :: Char -> Parser Char
 symbol c = token $ char c
 \end{lstlisting}
 In order to build parsers for both arithmetic and boolean expression the \texttt{<|>} operator between parsers is used.
-So, I define the parser for arithmetic expressions using other sub-parsers that are used in order to maintain the operators precedence.
+So, I defined the parser for arithmetic expressions using other sub-parsers that are used in order to maintain the operators precedence.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 arithmeticExpr :: Parser ArithmeticExpr
 arithmeticExpr = do
@@ -295,7 +295,7 @@ arithmeticFactor =
 \end{lstlisting}
 
 The parser for boolean expressions is similar to the parser for arithmetic expressions and so it's omitted in this documentation. In the end we have a parser for every command described in the grammar.
-So, I defined a parser for the following commands: \texttt{skip}, \texttt{assignment}, \texttt{if-then-else}, and \texttt{while-do}.
+So, I defined a parser for the following commands: \texttt{skip}, \texttt{assignment}, \texttt{if-then-else} and \texttt{while-do}.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 assignment :: Parser Command
 assignment = do
@@ -391,7 +391,7 @@ In other words, the optimizer is capable of detecting trivial infinite loops and
 
 \section*{The Interpreter}
 Finally, the obtained intermediate representation is interpreted by the interpreter.
-The interpreter scan the intermediate representation using \textit{depth-first traversal} on the n-ary tree that compose the intermediate representation itself.
+The interpreter scan the intermediate representation using \textit{depth-first traversal} on the $n$-ary tree that compose the intermediate representation itself.
 Before introducing the execution of the interpreter on an intermediate representation, some useful data types are defined in order to handle errors.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 data Exception
@@ -422,7 +422,7 @@ exception e = errorWithoutStackTrace $ show e
 \end{lstlisting}
 As one can see, the \texttt{Result} data type is a polymorphic type that can be either a \texttt{Ok} or a \texttt{Error}.
 The \texttt{Error} type also encapsulate an exception, one of the listed above.
-Moreover functor, applicative and monad interfaces are implemented in order to apply the needed operators directly on results.
+Moreover functor, applicative and monad interfaces are implemented in order to apply the needed operators directly on intermediate results.
 The main function that executes a block (i.e. a list of command) is reported in the following code snippet.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 execute :: State -> Block -> State
@@ -445,7 +445,7 @@ execute s (c@(Loop b cs') : cs) =
 The implementation of the execution of a \texttt{while-do} resembles how it's evaluated in operational semantics, i.e. by ``wrapping'' it in a \texttt{if-then-else} command statement.
 
 The implementation of the evaluation of arithmetic expressions make \textit{heavily} use of the methods exposed by the applicative interface.
-Moreover, the \texttt{liftA2} function is used in order to make the functions more compact.
+Moreover, the \texttt{liftA2} function is used in order to make the evaluation functions implementation more compact.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
@@ -478,7 +478,7 @@ evalArithmetic s (Neg a) = negate <$> v
     v = evalArithmetic s a
 \end{lstlisting}
 In this implementation, I also used the functions \texttt{safeDiv}, \texttt{safeMod} and \texttt{seqM2} which implementation is showed in the following code snippet.
-In other words, the \texttt{seqM2} is a custom function that implements binary sequencing, similarly to the \texttt{>>=} operator.
+In other words, the \texttt{seqM2} is a custom function that implements binary sequencing, similarly to the \texttt{bind} operator.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 safeDiv :: Int -> Int -> Result Int
 safeDiv _ 0 = Error DivisionByZero
@@ -497,9 +497,9 @@ join m = m >>= id
 The implementation of the evaluation of boolean expressions is very similar to the one for arithmetic expressions, so it's omitted.
 
 \section*{Conclusion}
-The monadic implementation of the parser give us a very simple way of concatenate and combine multiple parsers of sub-grammars.
+The monadic implementation of the parser give us a very simple way of concatenating and combining multiple parsers of sub-grammars.
 Also, it's very easy to extend the grammar of the language in order to include other commands or statements.
-Moreover, the use of an intermediate representation permits us to apply post-processing or optimizations and make the interpretation itself straightforward.
+Moreover, the use of an intermediate representation permits us to apply post-processing and optimizations and make the interpretation itself straightforward and more efficient.
 
 Future works may include the introduction of other types for variables, such as boolean types.
 Another extension of this work consists of adding useful information about the parsing errors, i.e. missing tokens and relevant row and column locations in the source code where the error occurred.
