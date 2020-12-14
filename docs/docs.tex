@@ -506,4 +506,24 @@ Another extension of this work consists of adding useful information about the p
 However, other improvements can be done in the optimization step.
 That is, one can implement more ``aggressive'' optimizations of the intermediate representation based on the expected state of memory of the program during its execution.
 
+\section*{Running an example}
+First of all, navigate to the project directory.
+Then, open \texttt{ghci} and load the needed modules as following.
+\begin{lstlisting}[style=custom-style]
+:load app/Main.hs src/Shrimp/Exception.hs src/Shrimp/Grammar.hs
+      src/Shrimp/Optimizer.hs src/Shrimp/Utils.hs src/Shrimp/State.hs
+      src/Shrimp/Interpreter.hs src/Shrimp/Parser.hs
+\end{lstlisting}
+Finally, run the main program and insert the path of a source file in the \texttt{examples} directory (for example \texttt{factorial.shr}).
+\begin{lstlisting}[style=custom-style]
+*Main> main
+The Shrimp Interpreter
+Insert the path of the source file:
+examples/factorial.shr
+Memory state:
+    i: 6
+    n: 5
+    x: 120
+\end{lstlisting}
+
 \end{document}

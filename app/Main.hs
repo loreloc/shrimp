@@ -3,21 +3,17 @@ module Main where
 import Shrimp.Exception (Result (Error, Ok), exception)
 import Shrimp.Interpreter (run)
 import Shrimp.Parser (parse)
-import System.Environment (getArgs)
 
 main :: IO ()
 main = do
-  args <- getArgs
-  if null args
-    then help
-    else do
-      source <- readFile $ head args
-      interpret source
+  filepath <- help
+  source <- readFile filepath
+  interpret source
 
-help :: IO ()
+help :: IO String
 help = do
-  putStrLn "🦐 The Shrimp Interpreter 🦐"
-  putStrLn "Usage:\tshrimp <program>.shr"
+  putStrLn "The Shrimp Interpreter\nInsert the path of the source file: "
+  getLine
 
 interpret :: String -> IO ()
 interpret source =
