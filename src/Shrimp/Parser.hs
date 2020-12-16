@@ -18,6 +18,7 @@ import Shrimp.SyntaxTree
 import Shrimp.Utils
   ( MonadAlternative (many, some, (<|>)),
     MonadPlus (plus, zero),
+    chain,
   )
 
 -- | Define the parser type
@@ -222,20 +223,28 @@ skip = do
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
-arithmeticExpr = do
-  a <- arithmeticTerm
-  do symbol '+'; Add a <$> arithmeticExpr
-    <|> do symbol '-'; Sub a <$> arithmeticExpr
-    <|> do return a
+arithmeticExpr = chain arithmeticTerm op
+  where
+    op = do
+      symbol '+'
+      return Add;
+      <|> do
+        symbol '-';
+        return Sub
 
 -- | Parse an arithmetic term
 arithmeticTerm :: Parser ArithmeticExpr
-arithmeticTerm = do
-  a <- arithmeticFactor
-  do symbol '*'; Mul a <$> arithmeticTerm
-    <|> do symbol '/'; Div a <$> arithmeticTerm
-    <|> do symbol '%'; Mod a <$> arithmeticTerm
-    <|> do return a
+arithmeticTerm = chain arithmeticFactor op
+  where
+    op = do
+      symbol '*'
+      return Mul;
+      <|> do
+        symbol '/';
+        return Div
+      <|> do
+        symbol '%';
+        return Mod
 
 -- | Parse an arithmetic factor
 arithmeticFactor :: Parser ArithmeticExpr
@@ -254,17 +263,19 @@ arithmeticFactor =
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
-booleanExpr = do
-  b <- booleanTerm
-  do keyword "or"; Or b <$> booleanExpr
-    <|> do return b
+booleanExpr = chain booleanTerm op
+  where
+    op = do
+      keyword "or"
+      return Or
 
 -- | Parse a boolean term
 booleanTerm :: Parser BooleanExpr
-booleanTerm = do
-  b <- booleanFactor
-  do keyword "and"; And b <$> booleanTerm
-    <|> do return b
+booleanTerm = chain booleanFactor op
+  where
+    op = do
+      keyword "and"
+      return And
 
 -- | Parse a boolean factor
 booleanFactor :: Parser BooleanExpr

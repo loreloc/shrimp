@@ -12,6 +12,10 @@ class (MonadPlus m) => MonadAlternative m where
   many m = some m <|> return []
   some :: m a -> m [a]
   some m = liftA2 (:) m (many m)
+  chain :: m a -> m (a -> a -> a) -> m a
+  chain p o = do a <- p; rest a
+    where
+      rest a = (do f <- o; a' <- p; rest (f a a')) <|> return a
 
 -- | Binary applicative lift
 liftA2 :: (Applicative f) => (a -> b -> c) -> f a -> f b -> f c
