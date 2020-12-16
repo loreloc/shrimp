@@ -9,12 +9,21 @@ data Exception
     DivisionByZero
   | -- | Define an undeclared variable exception
     UndeclaredVariable String
+  | -- | Define a multiple variable declaration exception
+    MultipleVariable String
+  | -- | Define a type mismatch exception
+    TypeMismatch String
+  | -- | Define an out of bound exception
+    OutOfBound
 
 instance Show Exception where
   show EmptyProgram = "Empty Program"
   show InfiniteLoop = "Infinite Loop"
   show DivisionByZero = "Division By Zero"
   show (UndeclaredVariable d) = "Undeclared Variable" ++ ": " ++ d
+  show (MultipleVariable d) = "Multiple Variable" ++ ": " ++ d
+  show (TypeMismatch d) = "Type Mismatch" ++ ": " ++ d
+  show OutOfBound = "Out Of Bound"
 
 -- | Define a result data structure
 data Result a = Ok a | Error Exception

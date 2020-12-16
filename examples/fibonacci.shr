@@ -1,3 +1,8 @@
+let f as int;
+let g as int;
+let k as int;
+let x as int;
+
 shrimp
 f = 0;
 g = 1;

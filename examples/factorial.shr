@@ -1,3 +1,7 @@
+let i as int;
+let n as int;
+let x as int;
+
 shrimp
 i = 1;
 n = 5;

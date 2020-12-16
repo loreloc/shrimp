@@ -1,3 +1,7 @@
+let a as int;
+let b as int;
+let t as int;
+
 shrimp
 a = 1071;
 b = 462;

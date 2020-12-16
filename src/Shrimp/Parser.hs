@@ -6,11 +6,14 @@ import Shrimp.Exception
   ( Exception (EmptyProgram),
     Result (Error, Ok),
   )
-import Shrimp.Grammar
+import Shrimp.SyntaxTree
   ( ArithmeticExpr (..),
     Block,
     BooleanExpr (..),
     Command (..),
+    Header,
+    Program,
+    Variable (..),
   )
 import Shrimp.Utils
   ( MonadAlternative (many, some, (<|>)),
@@ -49,10 +52,10 @@ instance MonadAlternative Parser where
       )
 
 -- | Parse a string
-parse :: String -> Result (Block, String)
+parse :: String -> Result (Program, String)
 parse cs = case unwrap program cs of
   [] -> Error EmptyProgram
-  [(b, cs)] -> Ok (b, cs)
+  [(p, cs)] -> Ok (p, cs)
 
 -- | Item function that consumes a character
 item :: Parser Char
@@ -117,25 +120,63 @@ isLetter c
   | otherwise = False
 
 -- | Parse a program
-program :: Parser Block
-program = do keyword "shrimp"; block
-
--- | Parse a command
-command :: Parser Command
-command = assignment <|> branch <|> loop <|> skip
+program :: Parser Program
+program = do h <- header; keyword "shrimp"; b <- block; return (h, b)
 
 -- | Parse a command block
 block :: Parser Block
 block = many command
 
+-- | Parse a header
+header :: Parser Header
+header = many variable
+
+-- | Parase a variable declearation
+variable :: Parser Variable
+variable = do
+  keyword "let"
+  d <- identifier
+  keyword "as"
+  do
+    keyword "int"
+    symbol ';'
+    return (IntegerDecl d)
+    <|> do
+      keyword "bool"
+      symbol ';'
+      return (BooleanDecl d)
+    <|> do
+      keyword "array"
+      symbol '['
+      n <- constant
+      symbol ']'
+      symbol ';'
+      return (ArrayDecl d n)
+
+-- | Parse a command
+command :: Parser Command
+command = assignment <|> branch <|> loop <|> skip
+
 -- | Parse an assignment command
 assignment :: Parser Command
 assignment = do
   d <- identifier
-  symbol '='
-  a <- arithmeticExpr
-  symbol ';'
-  return (Assignment d a)
+  do
+    symbol '='
+    a <- arithmeticExpr
+    symbol ';'
+    return (ArithmeticAssignment d a)
+    <|> do
+      symbol '='
+      b <- booleanExpr
+      symbol ';'
+      return (BooleanAssignment d b)
+    <|> do
+      symbol '['
+      i <- constant
+      symbol ']'
+      symbol '='
+      ArrayAssignment d i <$> arithmeticExpr
 
 -- | Parse a branch command
 branch :: Parser Command
@@ -198,9 +239,10 @@ arithmeticTerm = do
 arithmeticFactor :: Parser ArithmeticExpr
 arithmeticFactor =
   do Constant <$> constant
-    <|> do Identifier <$> identifier
+    <|> do IntegerVar <$> identifier
     <|> do symbol '-'; Neg <$> arithmeticExpr
     <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
+    <|> do d <- identifier; symbol '['; i <- constant; symbol ']'; return (ArrayVar d i)
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
@@ -219,8 +261,8 @@ booleanTerm = do
 -- | Parse a boolean factor
 booleanFactor :: Parser BooleanExpr
 booleanFactor =
-  do keyword "true"; return (Boolean True)
-    <|> do keyword "false"; return (Boolean False)
+  do keyword "true"; return (Truth True)
+    <|> do keyword "false"; return (Truth False)
     <|> do keyword "not"; Not <$> booleanExpr
     <|> do symbol '('; b <- booleanExpr; symbol ')'; return b
     <|> do
@@ -231,3 +273,4 @@ booleanFactor =
         <|> do keyword "gt"; Greater a <$> arithmeticExpr
         <|> do keyword "leq"; LessEqual a <$> arithmeticExpr
         <|> do keyword "geq"; GreaterEqual a <$> arithmeticExpr
+    <|> do BooleanVar <$> identifier

@@ -1,7 +1,22 @@
-module Shrimp.Grammar where
+module Shrimp.SyntaxTree where
+
+-- | Program definition
+type Program = (Header, Block)
+
+-- | Command block definition
+type Block = [Command]
+
+-- | Variable block definition
+type Header = [Variable]
 
 data ArithmeticExpr
-  = -- | Addition between sub-expressions
+  = -- | Constant integer
+    Constant Int
+  | -- | Integer variable identifier
+    IntegerVar String
+  | -- | Array variable access
+    ArrayVar String Int
+  | -- | Addition between sub-expressions
     Add ArithmeticExpr ArithmeticExpr
   | -- | Subtraction between sub-expressions
     Sub ArithmeticExpr ArithmeticExpr
@@ -13,15 +28,13 @@ data ArithmeticExpr
     Mod ArithmeticExpr ArithmeticExpr
   | -- | Unary negation
     Neg ArithmeticExpr
-  | -- | Constant integer
-    Constant Int
-  | -- | Identifier string
-    Identifier String
   deriving (Eq, Show)
 
 data BooleanExpr
   = -- | Ground True and False
-    Boolean Bool
+    Truth Bool
+  | -- | Boolean variable identifier
+    BooleanVar String
   | -- | Not binary operator
     Not BooleanExpr
   | -- | Or binary operator
@@ -42,17 +55,26 @@ data BooleanExpr
     GreaterEqual ArithmeticExpr ArithmeticExpr
   deriving (Eq, Show)
 
--- | Commands declaration
 data Command
   = -- | Skip
     Skip
-  | -- | Assignment
-    Assignment String ArithmeticExpr
+  | -- | Arithmetic assignment
+    ArithmeticAssignment String ArithmeticExpr
+  | -- | Boolean assignment
+    BooleanAssignment String BooleanExpr
+  | -- | Array element assignment
+    ArrayAssignment String Int ArithmeticExpr
   | -- | Branch command
     Branch BooleanExpr Block Block
   | -- | Loop command
     Loop BooleanExpr Block
   deriving (Eq, Show)
 
--- | Block declaration
-type Block = [Command]
+data Variable
+  = -- | Integer variable declaration
+    IntegerDecl String
+  | -- | Boolean variable declaration
+    BooleanDecl String
+  | -- | Array variable of fixed size declaration
+    ArrayDecl String Int
+  deriving (Eq, Show)
