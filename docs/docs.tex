@@ -316,7 +316,7 @@ arithmeticFactor =
         k <- arithmeticExpr
         symbol ']'
         return (ArrayVar d k)
-    <|> return (IntegerVar d)
+        <|> return (IntegerVar d)
     <|> do symbol '-'; Neg <$> arithmeticExpr
     <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
 \end{lstlisting}
