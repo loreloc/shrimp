@@ -77,40 +77,40 @@ So, it can be denoted using EBNF (Extended Backus Naur Form) as following:
 Type ::= "int"
 Integer ::= [0-9]+
 Identifier ::= [a-zA-Z_]+
-Program ::= "shrimp" Block
+Program ::= Header "shrimp" Block
+Header ::= [VariableDecl]*
 Block ::= [Command]*
+
+VariableDecl ::= "let" Identifiery "as" Type
+Type ::= {"int" | "bool" | "array" "[" Integer "]"}
+
 Command ::= {Assignment | Branch | Loop}
-Assignment ::= Identifier "=" ArithmeticExpr ";"
-Branch ::= "if" "(" BooleanExpr ")" "then" Block
-           ["else" Block] "end if" ";"
+
+Assignment ::= Identifier
+             {"=" ArithmeticExpr |
+              "=" BooleanExpr |
+              "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
+Branch ::= "if" "(" BooleanExpr ")" "then"
+           Block ["else" Block] "end if" ";"
 Loop ::= "while" "(" BooleanExpr ")" "do"
          Block "end while" ";"
 
-ArithmeticExpr ::=
-    ArithmeticTerm "+" ArithmeticExpr
-  | ArithmeticTerm "-" ArithmeticExpr
-  | ArithmetciTerm
-ArithmeticTerm ::=
-    ArithmeticFactor "*" ArithmeticTerm
-  | ArithmeticFactor "/" ArithmeticTerm
-  | ArithmeticFactor "%" ArithmeticTerm
-  | ArithmeticFactor
+ArithmeticExpr ::= ArithmeticTerm [{"+" | "-"} ArithmeticTerm]+
+ArithmeticTerm ::= ArithmeticFactor [{"*" | "/" | "%"} ArithmeticFactor]+
 ArithmeticFactor ::=
     Integer
   | Identifier
+  | Identifier "[" ArithmeticExpr "]"
   | "-" ArithmeticExpr
   | "(" ArithmeticExpr ")"
 
-BooleanExpr ::=
-    BooleanTerm "or" BooleanExpr
-  | BooleanTerm
-BooleanTerm ::=
-    BooleanFactor "and" BooleanTerm
-  | BooleanFactor
+BooleanExpr ::= ArithmeticTerm ["or" ArithmeticTerm]+
+BooleanTerm ::= ArithmeticFactor ["and" ArithmeticFactor]+
 
 BooleanFactor ::=
     "true"
   | "false"
+  | Identifier
   | "not" BooleanExpr
   | ArithmetciExpr "eq" ArithmeticExpr
   | ArithmetciExpr "neq" ArithmeticExpr
