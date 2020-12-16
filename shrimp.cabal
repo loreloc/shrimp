@@ -27,6 +27,7 @@ library
       Shrimp.Array
       Shrimp.Exception
       Shrimp.Interpreter
+      Shrimp.Optimizer
       Shrimp.Parser
       Shrimp.State
       Shrimp.SyntaxTree

@@ -23,10 +23,11 @@ import Shrimp.SyntaxTree
     Variable (..),
   )
 import Shrimp.Utils (liftA2, seqM2)
+import Shrimp.Optimizer (optimize)
 
 -- | Run a program
 run :: Program -> State
-run (header, block) = execute s block
+run (header, block) = execute s (optimize block)
   where
     s = initialize empty header
 

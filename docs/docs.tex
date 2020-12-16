@@ -131,45 +131,45 @@ type Block = [Command]
 type Header = [Variable]
 
 data ArithmeticExpr
-    = Constant Int
-    | IntegerVar String
-    | ArrayVar String ArithmeticExpr
-    | Add ArithmeticExpr ArithmeticExpr
-    | Sub ArithmeticExpr ArithmeticExpr
-    | Mul ArithmeticExpr ArithmeticExpr
-    | Div ArithmeticExpr ArithmeticExpr
-    | Mod ArithmeticExpr ArithmeticExpr
-    | Neg ArithmeticExpr
-    deriving (Eq, Show)
+  = Constant Int
+  | IntegerVar String
+  | ArrayVar String ArithmeticExpr
+  | Add ArithmeticExpr ArithmeticExpr
+  | Sub ArithmeticExpr ArithmeticExpr
+  | Mul ArithmeticExpr ArithmeticExpr
+  | Div ArithmeticExpr ArithmeticExpr
+  | Mod ArithmeticExpr ArithmeticExpr
+  | Neg ArithmeticExpr
+  deriving (Eq, Show)
 
 data BooleanExpr
-    = Truth Bool
-    | BooleanVar String
-    | Not BooleanExpr
-    | Or BooleanExpr BooleanExpr
-    | And BooleanExpr BooleanExpr
-    | Equal ArithmeticExpr ArithmeticExpr
-    | NotEqual ArithmeticExpr ArithmeticExpr
-    | Less ArithmeticExpr ArithmeticExpr
-    | Greater ArithmeticExpr ArithmeticExpr
-    | LessEqual ArithmeticExpr ArithmeticExpr
-    | GreaterEqual ArithmeticExpr ArithmeticExpr
-    deriving (Eq, Show)
+  = Truth Bool
+  | BooleanVar String
+  | Not BooleanExpr
+  | Or BooleanExpr BooleanExpr
+  | And BooleanExpr BooleanExpr
+  | Equal ArithmeticExpr ArithmeticExpr
+  | NotEqual ArithmeticExpr ArithmeticExpr
+  | Less ArithmeticExpr ArithmeticExpr
+  | Greater ArithmeticExpr ArithmeticExpr
+  | LessEqual ArithmeticExpr ArithmeticExpr
+  | GreaterEqual ArithmeticExpr ArithmeticExpr
+  deriving (Eq, Show)
 
 data Command
-    = Skip
-    | ArithmeticAssignment String ArithmeticExpr
-    | BooleanAssignment String BooleanExpr
-    | ArrayAssignment String ArithmeticExpr ArithmeticExpr
-    | Branch BooleanExpr Block Block
-    | Loop BooleanExpr Block
-    deriving (Eq, Show)
+  = Skip
+  | ArithmeticAssignment String ArithmeticExpr
+  | BooleanAssignment String BooleanExpr
+  | ArrayAssignment String ArithmeticExpr ArithmeticExpr
+  | Branch BooleanExpr Block Block
+  | Loop BooleanExpr Block
+  deriving (Eq, Show)
 
 data Variable
-    = IntegerDecl String
-    | BooleanDecl String
-    | ArrayDecl String Int
-    deriving (Eq, Show)
+  = IntegerDecl String
+  | BooleanDecl String
+  | ArrayDecl String Int
+  deriving (Eq, Show)
 \end{lstlisting}
 
 \section*{The Parser}
@@ -180,54 +180,62 @@ newtype Parser a = Parser {unwrap :: String -> [(a, String)]}
 Note that the parser have a special function called \texttt{unwrap} that takes the function out from the parser.
 The parser is implemented in a ``monadic'' way.
 That is, I implemented the following interfaces: \textit{monad plus} and \textit{monad alternative} as suggested in \textit{Monadic Parsing in Haskell} (Hutton \& Meijer).
-In order to implement the monad interface I also implemented the \textit{functor} and \textit{applicative} interfaces as in the following code snippet.
+In order to implement the monad interface I also implemented the \textit{functor}, \textit{applicative} and \textit{monad} interfaces.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 instance Functor Parser where
-fmap f p = Parser (\cs ->
-  [(f a, cs') | (a, cs') <- unwrap p cs])
-
-instance Applicative Parser where
-pure a = Parser (\cs -> [(a, cs)])
-p <*> q = Parser (\cs -> concat
-  [unwrap (fmap a q) cs' | (a, cs') <- unwrap p cs])
+  fmap f p = Parser (\cs ->
+    [(f a, cs') | (a, cs') <- unwrap p cs])
 \end{lstlisting}
-
 The functor implementation for the parser implements the \texttt{fmap} function, that is the application of a function on a wrapped parser.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+instance Applicative Parser where
+  pure a = Parser (\cs -> [(a, cs)])
+  p <*> q = Parser (\cs -> concat
+    [unwrap (fmap a q) cs' | (a, cs') <- unwrap p cs])
+\end{lstlisting}
 Moreover, the applicative implementation for the parser introduces both the function \texttt{pure} and the operator \texttt{<*>}.
 The \texttt{pure} function takes a simple value and wraps it into a parser.
 The \texttt{<*>} operator takes in input a function wrapped in a parser and another parser.
 The result is the application of the wrapped function onto the parser.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+instance Monad Parser where
+  return a = pure a
+  p >>= f = Parser (\cs -> concat
+    [unwrap (f a) cs' | (a, cs') <- unwrap p cs])
+\end{lstlisting}
+The \texttt{bind} operator \texttt{>>=} takes as input a parser and a function that returns a parser.
+The result of this operator is the application of the function to the ``unwrapped'' parser.
+The application of multiple \texttt{bind} nested operations can be abbreviated using the \texttt{do} construct in Haskell.
 
-The next step is to implement the standard monad interface.
-Moreover, two more interfaces are implemented: \texttt{MonadPlus} and \texttt{MonadAlternative}.
+Moreover, two other \textit{custom} interfaces are implemented, needed for making the parser: \texttt{MonadPlus} and \texttt{MonadAlternative}.
 The \texttt{plus} operator defined on parsers concatenates the result of each one.
 Moreover, the \texttt{MonadAlternative} give us an operator \texttt{<|>} useful for combining parsers in a mutually exclusive way.
 The classes definition can be found in the following code snippet.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 class (Monad m) => MonadPlus m where
-zero :: m a
-plus :: m a -> m a -> m a
+  zero :: m a
+  plus :: m a -> m a -> m a
 
 class (MonadPlus m) => MonadAlternative m where
-(<|>) :: m a -> m a -> m a
-many :: m a -> m [a]
-many m = some m <|> return []
-some :: m a -> m [a]
-some m = liftA2 (:) m (many m)
+  (<|>) :: m a -> m a -> m a
+  many :: m a -> m [a]
+  many m = some m <|> return []
+  some :: m a -> m [a]
+  some m = liftA2 (:) m (many m)
+  chain :: m a -> m (a -> a -> a) -> m a
+  chain p o = do a <- p; rest a
+    where
+      rest a = (do f <- o; a' <- p; rest (f a a')) <|> return a
 \end{lstlisting}
 Note that the function \texttt{liftA2} is the composition of \texttt{fmap} and the applicative operator \texttt{<*>}.
 The functions \texttt{many} and \texttt{some} are called \textit{combinators} and are used to define the concept of repeated parsing.
 The \texttt{many} function refers to zero to any number of applications of a parser while the \texttt{some} function refers to at least one to any number of applications of a parser.
 The implementation for the parser of the \texttt{bind} operator and the other functions described before is the following.
+The \texttt{chain} function is another combinator that it's used for left-associative recursion on parsers, as described by Hutton \& Meijer.
 \begin{lstlisting}[language=Haskell, style=custom-style]
-instance Monad Parser where
-return a = pure a
-p >>= f = Parser (\cs -> concat
-  [unwrap (f a) cs' | (a, cs') <- unwrap p cs])
-
 instance MonadPlus Parser where
-zero = Parser (const [])
-p `plus` q = Parser (\cs -> unwrap p cs ++ unwrap q cs)
+  zero = Parser (const [])
+  p `plus` q = Parser (\cs -> unwrap p cs ++ unwrap q cs)
 
 instance MonadAlternative Parser where
 (<|>) p q = Parser (\cs ->
@@ -235,13 +243,12 @@ instance MonadAlternative Parser where
     [] -> []
     (x : _) -> [x])
 \end{lstlisting}
-
 The \texttt{zero} function defines what is an empty parser.
 Note that in this context an empty parser is a \textit{failed} parser, that is a parser that results from a syntactical error.
 The \texttt{plus} function concatenates the results of two individual parsers.
 Using the monadic definition of parser, it permits us to easily build a parser for each structure of the programming language, without having to handle the eventual parsing errors individually.
 For example, it's possible to define a parser for symbols, identifiers and integers as in the following code snippet.
-Moreover, since the parser implements the \texttt{MonadAlternative} interface described above, the combination of multiple parsers is straightforward and easily \textbf{parallelizable} by the compiler.
+Moreover, since the parser implements the \texttt{MonadAlternative} interface described above, the combination of multiple parsers is straightforward and easily \textit{parallelizable} by the compiler.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 item :: Parser Char
 item = Parser (\case "" -> []; (c : cs) -> [(c, cs)])
@@ -282,40 +289,69 @@ symbol c = token $ char c
 \end{lstlisting}
 In order to build parsers for both arithmetic and boolean expression the \texttt{<|>} operator between parsers is used.
 So, I defined the parser for arithmetic expressions using other sub-parsers that are used in order to maintain the operators precedence.
+Moreover, I used the \texttt{chain} combinator in order to build the \textit{abstract syntax tree} by the left-associative operators of the grammar.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 arithmeticExpr :: Parser ArithmeticExpr
-arithmeticExpr = do
-  a <- arithmeticTerm
-    do symbol '+'; Add a <$> arithmeticExpr
-    <|> do symbol '-'; Sub a <$> arithmeticExpr
-    <|> do return a
+arithmeticExpr = chain arithmeticTerm op
+  where
+    op =
+      do symbol '+'; return Add
+        <|> do symbol '-'; return Sub
 
 arithmeticTerm :: Parser ArithmeticExpr
-arithmeticTerm = do
-  a <- arithmeticFactor
-    do symbol '*'; Mul a <$> arithmeticTerm
-    <|> do symbol '/'; Div a <$> arithmeticTerm
-    <|> do symbol '%'; Mod a <$> arithmeticTerm
-    <|> do return a
+arithmeticTerm = chain arithmeticFactor op
+  where
+    op =
+      do symbol '*'; return Mul
+        <|> do symbol '/'; return Div
+        <|> do symbol '%'; return Mod
 
 arithmeticFactor :: Parser ArithmeticExpr
 arithmeticFactor =
   do Constant <$> constant
-  <|> do Identifier <$> identifier
-  <|> do symbol '-'; Neg <$> arithmeticExpr
-  <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
+    <|> do
+      d <- identifier
+      do
+        symbol '['
+        k <- arithmeticExpr
+        symbol ']'
+        return (ArrayVar d k)
+    <|> return (IntegerVar d)
+    <|> do symbol '-'; Neg <$> arithmeticExpr
+    <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
 \end{lstlisting}
+The \texttt{chain} combinator is used in both \texttt{arithmeticExpr} and \texttt{arithmeticTerm} in order to permits to concatenate multiple addition/subtraction operators and multiple multiplication/division/modulus operators.
+If we didn't used the \texttt{chain} combinator but simple plain tail recursion we would have that the order of operations would be from right to left instead of left to right.
+The parser for boolean expressions is similar to the parser for arithmetic expressions and so it's omitted in this documentation.
 
-The parser for boolean expressions is similar to the parser for arithmetic expressions and so it's omitted in this documentation. In the end we have a parser for every command described in the grammar.
+In the end we have a parser for every command described in the grammar.
 So, I defined a parser for the following commands: \texttt{skip}, \texttt{assignment}, \texttt{if-then-else} and \texttt{while-do}.
+It's important to notice that the grammar also allows for \texttt{if-then} statements (i.e. without the \texttt{else} command block).
+A parser that works on both \texttt{if-then-else} and \texttt{if-then} statements is implemented by combining the two individual parsers using the \texttt{<|>} operator.
+Moreover, using the \texttt{many} combinator and the \texttt{<|>} operator, the parsers for both multiple commands and a single command are straightforward.
+\clearpage
 \begin{lstlisting}[language=Haskell, style=custom-style]
 assignment :: Parser Command
 assignment = do
   d <- identifier
-  symbol '='
-  a <- arithmeticExpr
-  symbol ';'
-  return (Assignment d a)
+  do
+    symbol '='
+    a <- arithmeticExpr
+    symbol ';'
+    return (ArithmeticAssignment d a)
+    <|> do
+      symbol '='
+      b <- booleanExpr
+      symbol ';'
+      return (BooleanAssignment d b)
+    <|> do
+      symbol '['
+      k <- arithmeticExpr
+      symbol ']'
+      symbol '='
+      a <- arithmeticExpr
+      symbol ';'
+      return (ArrayAssignment d k a)
 
 branch :: Parser Command
 branch = do
@@ -331,10 +367,10 @@ branch = do
     keyword "end if"
     symbol ';'
     return (Branch b c1 c2)
-    <|> do
-      keyword "end if"
-      symbol ';'
-      return (Branch b c1 [Skip])
+  <|> do
+    keyword "end if"
+    symbol ';'
+    return (Branch b c1 [Skip])
 
 loop :: Parser Command
 loop = do
@@ -349,30 +385,59 @@ loop = do
   return (Loop b c)
 
 skip :: Parser Command
-skip = do
-  keyword "skip"
-  symbol ';'
-  return Skip
+skip = do keyword "skip"; symbol ';'; return Skip
 \end{lstlisting}
-It's important to notice that the grammar also allows for \texttt{if-then} statements (i.e. without the \texttt{else} command block).
-A parser that works on both \texttt{if-then-else} and \texttt{if-then} statements is implemented by combining the two individual parsers using the \texttt{<|>} operator.
-Moreover, using the \texttt{many} combinator and the \texttt{<|>} operator, the parsers for both multiple commands and a single command are straightforward.
+\clearpage
+Another parser that is needed for the grammar, is the parser for the variable declarations.
+That is, in this programming language we can declare variables only on the top of the program, and before the \texttt{shrimp} keyword.
+The variables can be integers, boolean or array of integers.
+For the declaration of array of integers, the size of the array must be fixed and a constant integer value.
 \begin{lstlisting}[language=Haskell, style=custom-style]
+variable :: Parser Variable
+variable = do
+  keyword "let"
+  d <- identifier
+  keyword "as"
+  do
+    keyword "int"
+    symbol ';'
+    return (IntegerDecl d)
+    <|> do
+      keyword "bool"
+      symbol ';'
+      return (BooleanDecl d)
+    <|> do
+      keyword "array"
+      symbol '['
+      n <- constant
+      symbol ']'
+      symbol ';'
+      return (ArrayDecl d n)
+\end{lstlisting}
+
+The parser for the entire program is defined as in the following code snippet.
+That is, the parser for a block of commands is defined using the \texttt{many} combinator on the parser for a \texttt{command}.
+In the same way, the parser for a header is defined using the \texttt{many} combinator on the parser for a \texttt{variable}.
+The parser for the entire parser is defined using both the parser for the header and the command block.
+Note that the keyword \texttt{shrimp} separates these parts of the program.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+program :: Parser Program
+program = do
+  h <- header
+  keyword "shrimp"
+  b <- block
+  return (h, b)
+
 block :: Parser Block
 block = many command
 
-command :: Parser Command
-command = assignment <|> branch <|> loop <|> skip
-\end{lstlisting}
-The parser for the entire program is defined as in the following code snippet.
-\begin{lstlisting}[language=Haskell, style=custom-style]
-program :: Parser Block
-program = do keyword "shrimp"; block
+header :: Parser Header
+header = many variable
 
-parse :: String -> Result (Block, String)
+parse :: String -> Result (Program, String)
 parse cs = case unwrap program cs of
   [] -> Error EmptyProgram
-  [(b, cs)] -> Ok (b, cs)
+  [(p, cs)] -> Ok (p, cs)
 \end{lstlisting}
 
 \section*{The Optimizer}

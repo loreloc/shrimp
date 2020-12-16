@@ -216,35 +216,24 @@ loop = do
 
 -- | Parse a skip command
 skip :: Parser Command
-skip = do
-  keyword "skip"
-  symbol ';'
-  return Skip
+skip = do keyword "skip"; symbol ';'; return Skip
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr
 arithmeticExpr = chain arithmeticTerm op
   where
-    op = do
-      symbol '+'
-      return Add;
-      <|> do
-        symbol '-';
-        return Sub
+    op =
+      do symbol '+'; return Add
+        <|> do symbol '-'; return Sub
 
 -- | Parse an arithmetic term
 arithmeticTerm :: Parser ArithmeticExpr
 arithmeticTerm = chain arithmeticFactor op
   where
-    op = do
-      symbol '*'
-      return Mul;
-      <|> do
-        symbol '/';
-        return Div
-      <|> do
-        symbol '%';
-        return Mod
+    op =
+      do symbol '*'; return Mul
+        <|> do symbol '/'; return Div
+        <|> do symbol '%'; return Mod
 
 -- | Parse an arithmetic factor
 arithmeticFactor :: Parser ArithmeticExpr
