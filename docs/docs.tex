@@ -20,7 +20,7 @@
     stringstyle=\color{brightred},
     keywordstyle=\color{brightorange},
     numberstyle=\scriptsize\color{gray},
-    basicstyle=\ttfamily\scriptsize,
+    basicstyle=\ttfamily\footnotesize,
     literate=%
         {|}{{{\color{brightorange}|}}}1
         {::=}{{{\color{brightorange}::=}}}3,
@@ -74,24 +74,30 @@ The result of the interpretation is the resulting state, that is a set of ground
 The syntax for the \textbf{Shrimp} programming language is a context-free grammar.
 So, it can be denoted using EBNF (Extended Backus Naur Form) as following:
 \begin{lstlisting}[language=C, style=custom-style]
-Type ::= "int"
 Integer ::= [0-9]+
 Identifier ::= [a-zA-Z_]+
 Program ::= Header "shrimp" Block
 Header ::= [VariableDecl]*
 Block ::= [Command]*
 
-VariableDecl ::= "let" Identifiery "as" Type
+VariableDecl ::= "let" Identifier "as" Type
 Type ::= {"int" | "bool" | "array" "[" Integer "]"}
 Command ::= {Assignment | Branch | Loop}
+
 Assignment ::= Identifier
              {"=" ArithmeticExpr | "=" BooleanExpr |
               "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
-Branch ::= "if" "(" BooleanExpr ")" "then" Block ["else" Block] "end if" ";"
-Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while" ";"
 
-ArithmeticExpr ::= ArithmeticTerm [{"+" | "-"} ArithmeticTerm]*
-ArithmeticTerm ::= ArithmeticFactor [{"*" | "/" | "%"} ArithmeticFactor]*
+Branch ::= "if" "(" BooleanExpr ")" "then"
+           Block ["else" Block] "end if" ";"
+
+Loop ::= "while" "(" BooleanExpr ")" "do"
+         Block "end while" ";"
+
+ArithmeticExpr ::= ArithmeticTerm
+                   [{"+" | "-"} ArithmeticTerm]*
+ArithmeticTerm ::= ArithmeticFactor
+                   [{"*" | "/" | "%"} ArithmeticFactor]*
 ArithmeticFactor ::=
     Integer
   | Identifier
@@ -99,8 +105,8 @@ ArithmeticFactor ::=
   | "-" ArithmeticExpr
   | "(" ArithmeticExpr ")"
 
-BooleanExpr ::= ArithmeticTerm ["or" ArithmeticTerm]+
-BooleanTerm ::= ArithmeticFactor ["and" ArithmeticFactor]+
+BooleanExpr ::= ArithmeticTerm ["or" ArithmeticTerm]*
+BooleanTerm ::= ArithmeticFactor ["and" ArithmeticFactor]*
 BooleanFactor ::=
     "true"
   | "false"
@@ -120,38 +126,50 @@ This intermediate representation will be the result of the parser.
 Moreover, the presence of an intermediate representation permits us to apply optimizations \textit{at prior} respect to the interpretation step.
 The following code snippet contains the definition of the \textit{abstarct syntax tree}.
 \begin{lstlisting}[language=Haskell, style=custom-style]
+type Program = (Header, Block)
+type Block = [Command]
+type Header = [Variable]
+
 data ArithmeticExpr
-  = Add ArithmeticExpr ArithmeticExpr
-  | Sub ArithmeticExpr ArithmeticExpr
-  | Mul ArithmeticExpr ArithmeticExpr
-  | Div ArithmeticExpr ArithmeticExpr
-  | Mod ArithmeticExpr ArithmeticExpr
-  | Neg ArithmeticExpr
-  | Constant Int
-  | Identifier String
-  deriving (Eq, Show)
+    = Constant Int
+    | IntegerVar String
+    | ArrayVar String ArithmeticExpr
+    | Add ArithmeticExpr ArithmeticExpr
+    | Sub ArithmeticExpr ArithmeticExpr
+    | Mul ArithmeticExpr ArithmeticExpr
+    | Div ArithmeticExpr ArithmeticExpr
+    | Mod ArithmeticExpr ArithmeticExpr
+    | Neg ArithmeticExpr
+    deriving (Eq, Show)
 
 data BooleanExpr
-  = Boolean Bool
-  | Not BooleanExpr
-  | Or BooleanExpr BooleanExpr
-  | And BooleanExpr BooleanExpr
-  | Equal ArithmeticExpr ArithmeticExpr
-  | NotEqual ArithmeticExpr ArithmeticExpr
-  | Less ArithmeticExpr ArithmeticExpr
-  | Greater ArithmeticExpr ArithmeticExpr
-  | LessEqual ArithmeticExpr ArithmeticExpr
-  | GreaterEqual ArithmeticExpr ArithmeticExpr
-  deriving (Eq, Show)
+    = Truth Bool
+    | BooleanVar String
+    | Not BooleanExpr
+    | Or BooleanExpr BooleanExpr
+    | And BooleanExpr BooleanExpr
+    | Equal ArithmeticExpr ArithmeticExpr
+    | NotEqual ArithmeticExpr ArithmeticExpr
+    | Less ArithmeticExpr ArithmeticExpr
+    | Greater ArithmeticExpr ArithmeticExpr
+    | LessEqual ArithmeticExpr ArithmeticExpr
+    | GreaterEqual ArithmeticExpr ArithmeticExpr
+    deriving (Eq, Show)
 
 data Command
-  = Skip
-  | Assignment String ArithmeticExpr
-  | Branch BooleanExpr Block Block
-  | Loop BooleanExpr Block
-  deriving (Eq, Show)
+    = Skip
+    | ArithmeticAssignment String ArithmeticExpr
+    | BooleanAssignment String BooleanExpr
+    | ArrayAssignment String ArithmeticExpr ArithmeticExpr
+    | Branch BooleanExpr Block Block
+    | Loop BooleanExpr Block
+    deriving (Eq, Show)
 
-type Block = [Command]
+data Variable
+    = IntegerDecl String
+    | BooleanDecl String
+    | ArrayDecl String Int
+    deriving (Eq, Show)
 \end{lstlisting}
 
 \section*{The Parser}
