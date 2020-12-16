@@ -15,7 +15,7 @@ data ArithmeticExpr
   | -- | Integer variable identifier
     IntegerVar String
   | -- | Array variable access
-    ArrayVar String Int
+    ArrayVar String ArithmeticExpr
   | -- | Addition between sub-expressions
     Add ArithmeticExpr ArithmeticExpr
   | -- | Subtraction between sub-expressions
@@ -63,7 +63,7 @@ data Command
   | -- | Boolean assignment
     BooleanAssignment String BooleanExpr
   | -- | Array element assignment
-    ArrayAssignment String Int ArithmeticExpr
+    ArrayAssignment String ArithmeticExpr ArithmeticExpr
   | -- | Branch command
     Branch BooleanExpr Block Block
   | -- | Loop command

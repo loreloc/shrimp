@@ -26,4 +26,6 @@ writeArray i v' []  = Error OutOfBound
 writeArray i v' (v : vs)
   | i == 0 = Ok (v' : vs)
   | i < 0 = Error OutOfBound
-  | otherwise = writeArray (i - 1) v' vs
+  | otherwise = case writeArray (i - 1) v' vs of
+      Ok vs' -> Ok (v : vs')
+      Error e -> Error e

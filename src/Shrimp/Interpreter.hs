@@ -75,17 +75,18 @@ execute s ((BooleanAssignment d b) : cs) =
     Just (IntegerValue _) -> exception (TypeMismatch d)
     Just (ArrayValue _) -> exception (TypeMismatch d)
     Nothing -> exception (UndeclaredVariable d)
-execute s ((ArrayAssignment d i a) : cs) =
+execute s ((ArrayAssignment d k a) : cs) =
   case search d s of
     Just (ArrayValue vs) ->
-      case evalArithmetic s a of
-        Ok v -> execute s' cs
+      case (evalArithmetic s a, evalArithmetic s k) of
+        (Ok v, Ok i) -> execute s' cs
           where
             s' = insert d (ArrayValue vs') s
             vs' = case writeArray i v vs of
               Ok vs' -> vs'
               Error e -> exception e
-        Error e -> exception e
+        (Error e, _) -> exception e
+        (_, Error e) -> exception e
     Just (IntegerValue _) -> exception (TypeMismatch d)
     Just (BooleanValue _) -> exception (TypeMismatch d)
     Nothing -> exception (UndeclaredVariable d)
@@ -106,9 +107,12 @@ evalArithmetic s (IntegerVar d) =
     Just (BooleanValue _) -> exception (TypeMismatch d)
     Just (ArrayValue _) -> exception (TypeMismatch d)
     Nothing -> exception (UndeclaredVariable d)
-evalArithmetic s (ArrayVar d i) =
+evalArithmetic s (ArrayVar d k) =
   case search d s of
-    Just (ArrayValue vs) -> readArray i vs
+    Just (ArrayValue vs) ->
+      case evalArithmetic s k of
+        Ok i -> readArray i vs
+        Error e -> exception e
     Just (IntegerValue _) -> exception (TypeMismatch d)
     Just (BooleanValue _) -> exception (TypeMismatch d)
     Nothing -> exception (UndeclaredVariable d)

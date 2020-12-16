@@ -173,10 +173,12 @@ assignment = do
       return (BooleanAssignment d b)
     <|> do
       symbol '['
-      i <- constant
+      k <- arithmeticExpr
       symbol ']'
       symbol '='
-      ArrayAssignment d i <$> arithmeticExpr
+      a <- arithmeticExpr
+      symbol ';'
+      return (ArrayAssignment d k a)
 
 -- | Parse a branch command
 branch :: Parser Command
@@ -239,10 +241,16 @@ arithmeticTerm = do
 arithmeticFactor :: Parser ArithmeticExpr
 arithmeticFactor =
   do Constant <$> constant
-    <|> do IntegerVar <$> identifier
+    <|> do
+      d <- identifier
+      do
+        symbol '['
+        k <- arithmeticExpr
+        symbol ']'
+        return (ArrayVar d k)
+        <|> return (IntegerVar d)
     <|> do symbol '-'; Neg <$> arithmeticExpr
     <|> do symbol '('; a <- arithmeticExpr; symbol ')'; return a
-    <|> do d <- identifier; symbol '['; i <- constant; symbol ']'; return (ArrayVar d i)
 
 -- | Parse a boolean expression
 booleanExpr :: Parser BooleanExpr
