@@ -20,7 +20,7 @@
     stringstyle=\color{brightred},
     keywordstyle=\color{brightorange},
     numberstyle=\scriptsize\color{gray},
-    basicstyle=\ttfamily\footnotesize,
+    basicstyle=\ttfamily\scriptsize,
     literate=%
         {|}{{{\color{brightorange}|}}}1
         {::=}{{{\color{brightorange}::=}}}3,
@@ -83,20 +83,15 @@ Block ::= [Command]*
 
 VariableDecl ::= "let" Identifiery "as" Type
 Type ::= {"int" | "bool" | "array" "[" Integer "]"}
-
 Command ::= {Assignment | Branch | Loop}
-
 Assignment ::= Identifier
-             {"=" ArithmeticExpr |
-              "=" BooleanExpr |
+             {"=" ArithmeticExpr | "=" BooleanExpr |
               "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
-Branch ::= "if" "(" BooleanExpr ")" "then"
-           Block ["else" Block] "end if" ";"
-Loop ::= "while" "(" BooleanExpr ")" "do"
-         Block "end while" ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block ["else" Block] "end if" ";"
+Loop ::= "while" "(" BooleanExpr ")" "do" Block "end while" ";"
 
-ArithmeticExpr ::= ArithmeticTerm [{"+" | "-"} ArithmeticTerm]+
-ArithmeticTerm ::= ArithmeticFactor [{"*" | "/" | "%"} ArithmeticFactor]+
+ArithmeticExpr ::= ArithmeticTerm [{"+" | "-"} ArithmeticTerm]*
+ArithmeticTerm ::= ArithmeticFactor [{"*" | "/" | "%"} ArithmeticFactor]*
 ArithmeticFactor ::=
     Integer
   | Identifier
@@ -106,7 +101,6 @@ ArithmeticFactor ::=
 
 BooleanExpr ::= ArithmeticTerm ["or" ArithmeticTerm]+
 BooleanTerm ::= ArithmeticFactor ["and" ArithmeticFactor]+
-
 BooleanFactor ::=
     "true"
   | "false"
