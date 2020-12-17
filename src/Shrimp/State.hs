@@ -1,14 +1,14 @@
 module Shrimp.State where
 
 import Shrimp.Array
-  ( Array
+  ( Array,
   )
 
 data Value
   = -- | Integer value
     IntegerValue Int
   | -- | Boolean value
-    BooleanValue Bool 
+    BooleanValue Bool
   | -- | Array value
     ArrayValue Array
 
@@ -23,7 +23,8 @@ instance Show Value where
 instance Show State where
   show (State []) = ""
   show (State ((d, v) : ss)) = s ++ "\n" ++ show (State ss)
-    where s = "\t" ++ show d ++ ": " ++ show v
+    where
+      s = "\t" ++ show d ++ ": " ++ show v
 
 -- | Create an empty state
 empty :: State

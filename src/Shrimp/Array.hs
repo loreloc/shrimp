@@ -17,10 +17,10 @@ readArray i (v : vs)
 
 -- | Write an integer into the array
 writeArray :: Int -> Int -> Array -> Maybe Array
-writeArray i v' []  = Nothing
+writeArray i v' [] = Nothing
 writeArray i v' (v : vs)
   | i == 0 = Just (v' : vs)
   | i < 0 = Nothing
   | otherwise = case writeArray (i - 1) v' vs of
-      Just vs' -> Just (v : vs')
-      Nothing -> Nothing
+    Just vs' -> Just (v : vs')
+    Nothing -> Nothing

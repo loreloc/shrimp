@@ -13,7 +13,7 @@ import Shrimp.SyntaxTree
   )
 
 -- | Optimize a block
-optimize :: Block -> Block 
+optimize :: Block -> Block
 optimize [] = []
 optimize (Skip : cs) = optimize cs
 optimize ((ArithmeticAssignment d a) : cs) = ArithmeticAssignment d a' : cs'

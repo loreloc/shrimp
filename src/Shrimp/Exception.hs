@@ -14,7 +14,7 @@ data Exception
   | -- | Define a type mismatch exception
     TypeMismatch String
   | -- | Define an out of bound exception
-    OutOfBound String Int 
+    OutOfBound String Int
   | -- | Define a non-positive array size definition
     InvalidSize String
 

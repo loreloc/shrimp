@@ -123,7 +123,7 @@ evalArithmetic s (ArrayVar d k) =
   case search d s of
     Just (ArrayValue vs) ->
       case evalArithmetic s k of
-        Ok i -> 
+        Ok i ->
           case readArray i vs of
             Just v -> Ok v
             Nothing -> Error (OutOfBound d i)
