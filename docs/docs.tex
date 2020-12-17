@@ -85,7 +85,7 @@ Type ::= {"int" | "bool" | "array" "[" Integer "]"}
 Command ::= {Assignment | Branch | Loop}
 
 Assignment ::= Identifier
-             {"=" ArithmeticExpr | "=" BooleanExpr |
+             {"=" ArithmeticExpr | ":" BooleanExpr |
               "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
 
 Branch ::= "if" "(" BooleanExpr ")" "then"
@@ -340,7 +340,7 @@ assignment = do
     symbol ';'
     return (ArithmeticAssignment d a)
     <|> do
-      symbol '='
+      symbol ':'
       b <- booleanExpr
       symbol ';'
       return (BooleanAssignment d b)
@@ -476,7 +476,20 @@ data Exception
   | InfiniteLoop
   | DivisionByZero
   | UndeclaredVariable String
-  deriving (Show)
+  | MultipleVariable String
+  | TypeMismatch String
+  | OutOfBound String Int
+  | InvalidSize String
+
+instance Show Exception where
+  show EmptyProgram = "Empty Program"
+  show InfiniteLoop = "Infinite Loop"
+  show DivisionByZero = "Division By Zero"
+  show (UndeclaredVariable d) = "Undeclared Variable" ++ ": " ++ d
+  show (MultipleVariable d) = "Multiple Variable" ++ ": " ++ d
+  show (TypeMismatch d) = "Type Mismatch" ++ ": " ++ d
+  show (OutOfBound d i) = "Out Of Bound" ++ ": " ++ d ++ " at " ++ show i
+  show (InvalidSize d) = "Invalid Size" ++ ": " ++ d
 
 data Result a = Ok a | Error Exception
 
