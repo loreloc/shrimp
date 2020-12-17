@@ -14,7 +14,9 @@ data Exception
   | -- | Define a type mismatch exception
     TypeMismatch String
   | -- | Define an out of bound exception
-    OutOfBound
+    OutOfBound String Int 
+  | -- | Define a non-positive array size definition
+    InvalidSize String
 
 instance Show Exception where
   show EmptyProgram = "Empty Program"
@@ -23,7 +25,8 @@ instance Show Exception where
   show (UndeclaredVariable d) = "Undeclared Variable" ++ ": " ++ d
   show (MultipleVariable d) = "Multiple Variable" ++ ": " ++ d
   show (TypeMismatch d) = "Type Mismatch" ++ ": " ++ d
-  show OutOfBound = "Out Of Bound"
+  show (OutOfBound d i) = "Out Of Bound" ++ ": " ++ d ++ " at " ++ show i
+  show (InvalidSize d) = "Invalid Size" ++ ": " ++ d
 
 -- | Define a result data structure
 data Result a = Ok a | Error Exception

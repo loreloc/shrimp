@@ -168,7 +168,7 @@ assignment = do
     symbol ';'
     return (ArithmeticAssignment d a)
     <|> do
-      symbol '='
+      symbol ':'
       b <- booleanExpr
       symbol ';'
       return (BooleanAssignment d b)

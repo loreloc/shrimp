@@ -1,10 +1,5 @@
 module Shrimp.Array where
 
-import Shrimp.Exception
-  ( Result (Ok, Error),
-    Exception (OutOfBound),
-  )
-
 -- | Array definition
 type Array = [Int]
 
@@ -13,19 +8,19 @@ zeroArray :: Int -> Array
 zeroArray n = replicate n 0
 
 -- | Read an integer from the array
-readArray :: Int -> Array -> Result Int
-readArray i [] = Error OutOfBound
+readArray :: Int -> Array -> Maybe Int
+readArray i [] = Nothing
 readArray i (v : vs)
-  | i == 0 = Ok v
-  | i < 0 = Error OutOfBound
+  | i == 0 = Just v
+  | i < 0 = Nothing
   | otherwise = readArray (i - 1) vs
 
 -- | Write an integer into the array
-writeArray :: Int -> Int -> Array -> Result Array
-writeArray i v' []  = Error OutOfBound
+writeArray :: Int -> Int -> Array -> Maybe Array
+writeArray i v' []  = Nothing
 writeArray i v' (v : vs)
-  | i == 0 = Ok (v' : vs)
-  | i < 0 = Error OutOfBound
+  | i == 0 = Just (v' : vs)
+  | i < 0 = Nothing
   | otherwise = case writeArray (i - 1) v' vs of
-      Ok vs' -> Ok (v : vs')
-      Error e -> Error e
+      Just vs' -> Just (v : vs')
+      Nothing -> Nothing

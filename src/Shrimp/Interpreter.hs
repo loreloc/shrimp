@@ -1,11 +1,17 @@
 module Shrimp.Interpreter where
 
-import Shrimp.Array (Array, readArray, writeArray, zeroArray)
+import Shrimp.Array
+  ( Array,
+    readArray,
+    writeArray,
+    zeroArray,
+  )
 import Shrimp.Exception
   ( Exception (..),
     Result (Error, Ok),
     exception,
   )
+import Shrimp.Optimizer (optimize)
 import Shrimp.State
   ( State (..),
     Value (..),
@@ -23,7 +29,6 @@ import Shrimp.SyntaxTree
     Variable (..),
   )
 import Shrimp.Utils (liftA2, seqM2)
-import Shrimp.Optimizer (optimize)
 
 -- | Run a program
 run :: Program -> State
@@ -38,17 +43,23 @@ initialize s ((IntegerDecl d) : hs) =
   case search d s of
     Just _ -> exception (MultipleVariable d)
     Nothing -> initialize s' hs
-      where s' = insert d (IntegerValue 0) s
+      where
+        s' = insert d (IntegerValue 0) s
 initialize s ((BooleanDecl d) : hs) =
   case search d s of
     Just _ -> exception (MultipleVariable d)
     Nothing -> initialize s' hs
-      where s' = insert d (BooleanValue False) s
+      where
+        s' = insert d (BooleanValue False) s
 initialize s ((ArrayDecl d n) : hs) =
   case search d s of
     Just _ -> exception (MultipleVariable d)
-    Nothing -> initialize s' hs
-      where s' = insert d (ArrayValue (zeroArray n)) s
+    Nothing ->
+      if n > 0
+        then initialize s' hs
+        else exception (InvalidSize d)
+      where
+        s' = insert d (ArrayValue (zeroArray n)) s
 
 -- | Execute a program given a state
 execute :: State -> Block -> State
@@ -84,8 +95,8 @@ execute s ((ArrayAssignment d k a) : cs) =
           where
             s' = insert d (ArrayValue vs') s
             vs' = case writeArray i v vs of
-              Ok vs' -> vs'
-              Error e -> exception e
+              Just vs' -> vs'
+              Nothing -> exception (OutOfBound d i)
         (Error e, _) -> exception e
         (_, Error e) -> exception e
     Just (IntegerValue _) -> exception (TypeMismatch d)
@@ -112,7 +123,10 @@ evalArithmetic s (ArrayVar d k) =
   case search d s of
     Just (ArrayValue vs) ->
       case evalArithmetic s k of
-        Ok i -> readArray i vs
+        Ok i -> 
+          case readArray i vs of
+            Just v -> Ok v
+            Nothing -> Error (OutOfBound d i)
         Error e -> exception e
     Just (IntegerValue _) -> exception (TypeMismatch d)
     Just (BooleanValue _) -> exception (TypeMismatch d)
