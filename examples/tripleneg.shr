@@ -1,8 +1,0 @@
-let x as int;
-let y as int;
-
-shrimp
-x = 1816;
-x = -(-(-x));
-y = -42;
-y = ---y;
