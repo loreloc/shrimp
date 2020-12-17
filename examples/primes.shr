@@ -1,0 +1,32 @@
+let n as int;
+let i as int;
+let j as int;
+let stop as bool;
+let primes as array[30];
+
+shrimp
+i = 1;
+n = 3;
+primes[0] = 2;
+
+while (i lt 30)
+do
+    j = i - 1;
+    stop : false;
+    while (j gt 0 and not stop)
+    do
+        if (n % primes[j] eq 0)
+        then
+            stop : true;
+        else
+            j = j - 1;
+        end if;
+    end while;
+
+    if (j eq 0)
+    then
+        primes[i] = n;
+        i = i + 1;
+    end if;
+    n = n + 2;
+end while;
