@@ -1,8 +1,6 @@
 module Main where
 
-import Shrimp.Exception (Result (Error, Ok), exception)
-import Shrimp.Interpreter (run)
-import Shrimp.Parser (parse)
+import Shrimp
 
 main :: IO ()
 main = do
@@ -18,10 +16,10 @@ help = do
 interpret :: String -> IO ()
 interpret source =
   case parse source of
-    Ok (program, message) -> do
+    Ok (code, message) -> do
       if null message
         then do
-          let state = run program
+          let state = run code
           putStrLn "Memory state:"
           print state
         else do

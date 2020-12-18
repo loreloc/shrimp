@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Shrimp
       Shrimp.Array
       Shrimp.Exception
       Shrimp.Interpreter

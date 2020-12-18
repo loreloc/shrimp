@@ -21,6 +21,7 @@
     keywordstyle=\color{brightorange},
     numberstyle=\scriptsize\color{gray},
     basicstyle=\ttfamily\footnotesize,
+    columns=fullflexible,
     literate=%
         {|}{{{\color{brightorange}|}}}1
         {::=}{{{\color{brightorange}::=}}}3,
@@ -429,6 +430,7 @@ program :: Parser Program
 program = do
   h <- header
   keyword "shrimp"
+  symbol ';'
   b <- block
   return (h, b)
 
@@ -450,12 +452,12 @@ Currently, the main optimization step is related to the execution of constant va
 That is, if an expression in a loop is defined only on constant values, it's better to optimize the computation of that expression by replacing it with the result.
 This procedure is done before the interpretation of the program.
 For example, consider the following arithmetic expression, expressed in intermediate representation, that we wish to optimize.
+If we apply the optimization step to this arithmetic expression, we obtain the equivalent but more efficient arithmetic expression.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 let expr = Div (
     (Mul (Identifier "x") (Sub (Constant 5) (Constant 3)))
     (Add (Constant 9) (Constant 1)))
 \end{lstlisting}
-If we apply the optimization step to this arithmetic expression, we obtain the equivalent but more efficient arithmetic expression.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 let expr' = Div (Mul (Identifier "x") (Constant 2)) (Constant 10)
 \end{lstlisting}
@@ -465,10 +467,33 @@ The \textit{optimization} process also includes a basic optimization on commands
 First of all, all the \texttt{skip} commands are removed from the intermediate representation.
 Moreover, if the condition of a \texttt{if-then-else} command is always \textit{true} then the entire statement is replaced with the first block of commands.
 In a similar way, if the condition is always \textit{false} then the entire statement is replaced with the second block of commands.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let command = Branch (Equal (Sub (Constant 1) (Constant 1)) 0)
+              [Assignment "x" (Constant 1)]
+              [Assignment "x" (Constant 2)]
+\end{lstlisting}
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let command' = [Assignment "x" (Constant 1)]
+\end{lstlisting}
 Furthermore, this approach is also used for \texttt{while-do} commands.
 That is, if the condition of a \texttt{while-do} command is always \textit{false} then the entire statement is completely removed.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 1)
+              [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
+\end{lstlisting}
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let command' = []
+\end{lstlisting}
 However, if the condition is always \textit{true} then an exception named \textit{Infinite Loop} is raised.
 In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
+For example, the following loop program's intermediate representation is not interpreted.
+That is, an \textit{Infinite Loop} exception is raised during the optimization step.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 0)
+              [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
+\end{lstlisting}
+
+\clearpage
 
 \section*{The Interpreter}
 Finally, the obtained intermediate representation is interpreted by the interpreter.
@@ -517,36 +542,113 @@ exception e = errorWithoutStackTrace $ show e
 As one can see, the \texttt{Result} data type is a polymorphic type that can be either a \texttt{Ok} or a \texttt{Error}.
 The \texttt{Error} type also encapsulate an exception, one of the listed above.
 Moreover functor, applicative and monad interfaces are implemented in order to apply the needed operators directly on intermediate results.
-The main function that executes a block (i.e. a list of command) is reported in the following code snippet.
+The functor, applicative and monad interfaces implementation is as in the \texttt{Maybe} data type.
+In the end, the \texttt{exception} function is useful in order to print the error and stop the program without printing the stack trace.
+
+In order to interpret the intermediate representation, two sub-interpreters are implemented.
+The first interpreter loads all the variables in the variables declaration section of the program.
+The result of the variables loading is a consistent state, viewed as a dictionary with key as the identifier of a variable and value the effective value of the variable at a certain point of the program.
+The value of a variable can be either an integer, a boolean value or a vector of integers.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+initialize :: State -> Header -> State
+initialize s [] = s
+initialize s ((IntegerDecl d) : hs) =
+  case search d s of
+    Just _ -> exception (MultipleVariable d)
+    Nothing -> initialize s' hs
+      where
+        s' = insert d (IntegerValue 0) s
+initialize s ((BooleanDecl d) : hs) =
+  case search d s of
+    Just _ -> exception (MultipleVariable d)
+    Nothing -> initialize s' hs
+      where
+        s' = insert d (BooleanValue False) s
+initialize s ((ArrayDecl d n) : hs) =
+  case search d s of
+    Just _ -> exception (MultipleVariable d)
+    Nothing ->
+      if n > 0
+        then initialize s' hs
+        else exception (InvalidSize d)
+      where
+        s' = insert d (ArrayValue (zeroArray n)) s
+\end{lstlisting}
+The second interpreter executes the commands specified in the commands section of the command (after the \texttt{shrimp} keyword).
+So, it interprets every command specified in the grammar, that are \texttt{skip}, various kinds of \texttt{assignment}s, \texttt{if-then-else} and \texttt{if-then} statements and the \texttt{while-do} statement.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 execute :: State -> Block -> State
 execute s [] = s
 execute s (Skip : cs) = execute s cs
-execute s ((Assignment d a) : cs) =
-  case evalArithmetic s a of
-    Ok v -> execute s' cs
-      where
-        s' = insert d v s
-    Error e -> exception e
+execute s ((ArithmeticAssignment d a) : cs) =
+  case search d s of
+    Just (IntegerValue _) ->
+      case evalArithmetic s a of
+        Ok v -> execute s' cs
+          where
+            s' = insert d (IntegerValue v) s
+        Error e -> exception e
+    Just (BooleanValue _) -> exception (TypeMismatch d)
+    Just (ArrayValue _) -> exception (TypeMismatch d)
+    Nothing -> exception (UndeclaredVariable d)
+execute s ((BooleanAssignment d b) : cs) =
+  case search d s of
+    Just (BooleanValue _) ->
+      case evalBoolean s b of
+        Ok t -> execute s' cs
+          where
+            s' = insert d (BooleanValue t) s
+        Error e -> exception e
+    Just (IntegerValue _) -> exception (TypeMismatch d)
+    Just (ArrayValue _) -> exception (TypeMismatch d)
+    Nothing -> exception (UndeclaredVariable d)
+execute s ((ArrayAssignment d k a) : cs) =
+  case search d s of
+    Just (ArrayValue vs) ->
+      case (evalArithmetic s a, evalArithmetic s k) of
+        (Ok v, Ok i) -> execute s' cs
+          where
+            s' = insert d (ArrayValue vs') s
+            vs' = case writeArray i v vs of
+              Just vs' -> vs'
+              Nothing -> exception (OutOfBound d i)
+        (Error e, _) -> exception e
+        (_, Error e) -> exception e
+    Just (IntegerValue _) -> exception (TypeMismatch d)
+    Just (BooleanValue _) -> exception (TypeMismatch d)
+    Nothing -> exception (UndeclaredVariable d)
 execute s ((Branch b cs' cs'') : cs) =
   case evalBoolean s b of
     Ok True -> execute s (cs' ++ cs)
     Ok False -> execute s (cs'' ++ cs)
     Error e -> exception e
 execute s (c@(Loop b cs') : cs) =
-  execute s (Branch b (cs' ++ [c]) [Skip] : cs)
+execute s (Branch b (cs' ++ [c]) [Skip] : cs)
 \end{lstlisting}
-The implementation of the execution of a \texttt{while-do} resembles how it's evaluated in operational semantics, i.e. by ``wrapping'' it in a \texttt{if-then-else} command statement.
 
 The implementation of the evaluation of arithmetic expressions make \textit{heavily} use of the methods exposed by the applicative interface.
 Moreover, the \texttt{liftA2} function is used in order to make the evaluation functions implementation more compact.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
-evalArithmetic s (Identifier d) =
+evalArithmetic s (IntegerVar d) =
   case search d s of
-    Just v -> Ok v
-    Nothing -> Error (UndeclaredVariable d)
+    Just (IntegerValue v) -> Ok v
+    Just (BooleanValue _) -> exception (TypeMismatch d)
+    Just (ArrayValue _) -> exception (TypeMismatch d)
+    Nothing -> exception (UndeclaredVariable d)
+evalArithmetic s (ArrayVar d k) =
+  case search d s of
+    Just (ArrayValue vs) ->
+      case evalArithmetic s k of
+        Ok i ->
+          case readArray i vs of
+            Just v -> Ok v
+            Nothing -> Error (OutOfBound d i)
+        Error e -> exception e
+    Just (IntegerValue _) -> exception (TypeMismatch d)
+    Just (BooleanValue _) -> exception (TypeMismatch d)
+    Nothing -> exception (UndeclaredVariable d)
 evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
   where
     v1 = evalArithmetic s a1
@@ -600,24 +702,26 @@ Another extension of this work consists of adding useful information about the p
 However, other improvements can be done in the optimization step.
 That is, one can implement more ``aggressive'' optimizations of the intermediate representation based on the expected state of memory of the program during its execution.
 
+\clearpage
+
 \section*{Running an example}
 First of all, navigate to the project directory.
 Then, open \texttt{ghci} and load the needed modules as following.
 \begin{lstlisting}[style=custom-style]
-:load app/Main.hs src/Shrimp/Exception.hs src/Shrimp/Grammar.hs
-      src/Shrimp/Optimizer.hs src/Shrimp/Utils.hs src/Shrimp/State.hs
-      src/Shrimp/Interpreter.hs src/Shrimp/Parser.hs
+:load Main.hs Shrimp.hs
 \end{lstlisting}
-Finally, run the main program and insert the path of a source file in the \texttt{examples} directory (for example \texttt{factorial.shr}).
+Finally, run the main program and insert the path of a source file in the \texttt{examples} directory (for example \texttt{primes.shr}).
 \begin{lstlisting}[style=custom-style]
 *Main> main
 The Shrimp Interpreter
 Insert the path of the source file:
-examples/factorial.shr
+examples/primes.shr
 Memory state:
-    i: 6
-    n: 5
-    x: 120
+    "n": int = 49
+    "i": int = 15
+    "j": int = 0
+    "stop": bool = False
+    "primes": array[15] = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47]
 \end{lstlisting}
 
 \end{document}

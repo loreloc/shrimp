@@ -2,14 +2,14 @@ let n as int;
 let i as int;
 let j as int;
 let stop as bool;
-let primes as array[30];
+let primes as array[15];
 
 shrimp;
 i = 1;
 n = 3;
 primes[0] = 2;
 
-while (i lt 30)
+while (i lt 15)
 do
     j = i - 1;
     stop = false;
