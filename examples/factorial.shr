@@ -2,11 +2,11 @@ let i as int;
 let n as int;
 let x as int;
 
-shrimp
+shrimp;
 i = 1;
 n = 5;
 x = 1;
 while (i leq n) do
     x = x * i;
     i = i + 1;
-end while;
+end;

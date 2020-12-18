@@ -58,6 +58,35 @@ parse cs = case unwrap program cs of
   [] -> Error EmptyProgram
   [(p, cs)] -> Ok (p, cs)
 
+-- | The list of keywords
+keywords :: [String]
+keywords =
+  [ "let",
+    "as",
+    "int",
+    "bool",
+    "array",
+    "true",
+    "false",
+    "or",
+    "and",
+    "not",
+    "eq",
+    "neq",
+    "lt",
+    "gt",
+    "leq",
+    "geq",
+    "if",
+    "then",
+    "else",
+    "end",
+    "while",
+    "do",
+    "skip",
+    "shrimp"
+  ]
+
 -- | Item function that consumes a character
 item :: Parser Char
 item = Parser (\case "" -> []; (c : cs) -> [(c, cs)])
@@ -76,7 +105,11 @@ space = many $ satisfy isSpace
 
 -- | Parse an identifier
 identifier :: Parser String
-identifier = token $ some $ satisfy isLetter
+identifier = do
+  s <- token $ some $ satisfy isLetter
+  if s `elem` keywords
+    then zero
+    else return s
 
 -- | Parse a constant
 constant :: Parser Int
@@ -122,7 +155,7 @@ isLetter c
 
 -- | Parse a program
 program :: Parser Program
-program = do h <- header; keyword "shrimp"; b <- block; return (h, b)
+program = do h <- header; keyword "shrimp"; symbol ';'; b <- block; return (h, b)
 
 -- | Parse a command block
 block :: Parser Block
@@ -168,7 +201,7 @@ assignment = do
     symbol ';'
     return (ArithmeticAssignment d a)
     <|> do
-      symbol ':'
+      symbol '='
       b <- booleanExpr
       symbol ';'
       return (BooleanAssignment d b)
@@ -193,11 +226,11 @@ branch = do
   do
     keyword "else"
     c2 <- block
-    keyword "end if"
+    keyword "end"
     symbol ';'
     return (Branch b c1 c2)
     <|> do
-      keyword "end if"
+      keyword "end"
       symbol ';'
       return (Branch b c1 [Skip])
 
@@ -210,7 +243,7 @@ loop = do
   symbol ')'
   keyword "do"
   c <- block
-  keyword "end while"
+  keyword "end"
   symbol ';'
   return (Loop b c)
 

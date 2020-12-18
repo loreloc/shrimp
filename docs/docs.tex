@@ -72,10 +72,10 @@ The result of the interpretation is the resulting state, that is a set of ground
 
 \section*{The Language Syntax}
 The syntax for the \textbf{Shrimp} programming language is a context-free grammar.
-So, it can be denoted using EBNF (Extended Backus Naur Form) as following:
+So, it can be denoted using some kind of EBNF (Extended Backus Naur Form) as following:
 \begin{lstlisting}[language=C, style=custom-style]
 Integer ::= [0-9]+
-Identifier ::= [a-zA-Z_]+
+Identifier ::= [a-zA-Z_]+ \ Keyword
 Program ::= Header "shrimp" Block
 Header ::= [VariableDecl]*
 Block ::= [Command]*
@@ -85,14 +85,14 @@ Type ::= {"int" | "bool" | "array" "[" Integer "]"}
 Command ::= {Assignment | Branch | Loop}
 
 Assignment ::= Identifier
-             {"=" ArithmeticExpr | ":" BooleanExpr |
+             {"=" ArithmeticExpr | "=" BooleanExpr |
               "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
 
 Branch ::= "if" "(" BooleanExpr ")" "then"
-           Block ["else" Block] "end if" ";"
+           Block ["else" Block] "end" ";"
 
 Loop ::= "while" "(" BooleanExpr ")" "do"
-         Block "end while" ";"
+         Block "end" ";"
 
 ArithmeticExpr ::= ArithmeticTerm
                    [{"+" | "-"} ArithmeticTerm]*
@@ -263,7 +263,11 @@ space :: Parser String
 space = many $ satisfy isSpace
 
 identifier :: Parser String
-identifier = token $ some $ satisfy isLetter
+identifier = do
+  s <- token $ some $ satisfy isLetter
+  if s `elem` keywords
+    then zero
+    else return s
 
 constant :: Parser Int
 constant = read <$> token (some $ satisfy isDigit)
@@ -276,6 +280,9 @@ Then I defined a function called \texttt{satisfy} that apply a constraint to the
 This function returns an \texttt{zero} parser if the constraint is not satisfied.
 In the end, using both the combinators \texttt{many} and \texttt{some}, I built parsers for identifiers, constants and also spaces that are the main blocks of the context-free grammar already defined.
 In the same way, it's possible to define a parser for other constructs, such as keywords and symbols.
+It's important to note that the identifier parser fails if a keyword is found.
+This is a very fundamental aspect for a programming language.
+So, it's not possible use variables identified by keywords. \\
 \begin{lstlisting}[language=Haskell, style=custom-style]
 keyword :: String -> Parser String
 keyword cs = token $ word cs
@@ -325,11 +332,9 @@ If we didn't used the \texttt{chain} combinator but simple plain tail recursion 
 The parser for boolean expressions is similar to the parser for arithmetic expressions and so it's omitted in this documentation.
 
 In the end we have a parser for every command described in the grammar.
-So, I defined a parser for the following commands: \texttt{skip}, \texttt{assignment}, \texttt{if-then-else} and \texttt{while-do}.
 It's important to notice that the grammar also allows for \texttt{if-then} statements (i.e. without the \texttt{else} command block).
 A parser that works on both \texttt{if-then-else} and \texttt{if-then} statements is implemented by combining the two individual parsers using the \texttt{<|>} operator.
 Moreover, using the \texttt{many} combinator and the \texttt{<|>} operator, the parsers for both multiple commands and a single command are straightforward.
-\clearpage
 \begin{lstlisting}[language=Haskell, style=custom-style]
 assignment :: Parser Command
 assignment = do
@@ -340,7 +345,7 @@ assignment = do
     symbol ';'
     return (ArithmeticAssignment d a)
     <|> do
-      symbol ':'
+      symbol '='
       b <- booleanExpr
       symbol ';'
       return (BooleanAssignment d b)
@@ -364,11 +369,11 @@ branch = do
   do
     keyword "else"
     c2 <- block
-    keyword "end if"
+    keyword "end"
     symbol ';'
     return (Branch b c1 c2)
   <|> do
-    keyword "end if"
+    keyword "end"
     symbol ';'
     return (Branch b c1 [Skip])
 
@@ -380,14 +385,13 @@ loop = do
   symbol ')'
   keyword "do"
   c <- block
-  keyword "end while"
+  keyword "end"
   symbol ';'
   return (Loop b c)
 
 skip :: Parser Command
 skip = do keyword "skip"; symbol ';'; return Skip
 \end{lstlisting}
-\clearpage
 Another parser that is needed for the grammar, is the parser for the variable declarations.
 That is, in this programming language we can declare variables only on the top of the program, and before the \texttt{shrimp} keyword.
 The variables can be integers, boolean or array of integers.

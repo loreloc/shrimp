@@ -2,11 +2,11 @@ let a as int;
 let b as int;
 let t as int;
 
-shrimp
+shrimp;
 a = 1071;
 b = 462;
 while (b neq 0) do
     t = b;
     b = a % b;
     a = t;
-end while;
+end;
