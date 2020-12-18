@@ -419,7 +419,6 @@ variable = do
       symbol ';'
       return (ArrayDecl d n)
 \end{lstlisting}
-
 The parser for the entire program is defined as in the following code snippet.
 That is, the parser for a block of commands is defined using the \texttt{many} combinator on the parser for a \texttt{command}.
 In the same way, the parser for a header is defined using the \texttt{many} combinator on the parser for a \texttt{variable}.
