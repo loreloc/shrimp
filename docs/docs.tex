@@ -625,9 +625,12 @@ execute s ((Branch b cs' cs'') : cs) =
 execute s (c@(Loop b cs') : cs) =
 execute s (Branch b (cs' ++ [c]) [Skip] : cs)
 \end{lstlisting}
-
 The implementation of the evaluation of arithmetic expressions make \textit{heavily} use of the methods exposed by the applicative interface.
-Moreover, the \texttt{liftA2} function is used in order to make the evaluation functions implementation more compact.
+Moreover, the \texttt{liftA2} function is used in order to make the evaluation functions implementation more compact and readable.
+It's important to notice that arithmetic expressions evaluation includes reading from variables and accessing to arrays by an index that is the evaluation of another arithmetic expression.
+Moreover, the current implementation includes the evaluation of the \texttt{minus} unary operator.
+In this implementation, I also used the functions \texttt{safeDiv}, \texttt{safeMod} and \texttt{seqM2}.
+In other words, the \texttt{seqM2} is a custom function that implements binary sequencing, similarly to the \texttt{bind} operator.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 evalArithmetic :: State -> ArithmeticExpr -> Result Int
 evalArithmetic _ (Constant v) = Ok v
@@ -673,8 +676,8 @@ evalArithmetic s (Neg a) = negate <$> v
   where
     v = evalArithmetic s a
 \end{lstlisting}
-In this implementation, I also used the functions \texttt{safeDiv}, \texttt{safeMod} and \texttt{seqM2} which implementation is showed in the following code snippet.
-In other words, the \texttt{seqM2} is a custom function that implements binary sequencing, similarly to the \texttt{bind} operator.
+The implementations of \texttt{saveDiv}, \texttt{safeMod}, and \texttt{seqM2} functions are listed in the following code snippet.
+Note that \texttt{saveDiv} and \texttt{safeMod} are special functions that handles divisions by zero at runtime.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 safeDiv :: Int -> Int -> Result Int
 safeDiv _ 0 = Error DivisionByZero
@@ -697,7 +700,7 @@ The monadic implementation of the parser give us a very simple way of concatenat
 Also, it's very easy to extend the grammar of the language in order to include other commands or statements.
 Moreover, the use of an intermediate representation permits us to apply post-processing and optimizations and make the interpretation itself straightforward and more efficient.
 
-Future works may include the introduction of other types for variables, such as boolean types.
+Future works may include the introduction of other types for variables.
 Another extension of this work consists of adding useful information about the parsing errors, i.e. missing tokens and relevant row and column locations in the source code where the error occurred.
 However, other improvements can be done in the optimization step.
 That is, one can implement more ``aggressive'' optimizations of the intermediate representation based on the expected state of memory of the program during its execution.
