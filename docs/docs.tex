@@ -60,7 +60,7 @@ The program is composed by three main components:
 \end{itemize}
 
 The \textbf{parser} takes in input the source code and convert it into an intermediate representation.
-The intermediate representation have the structure of a $n$-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and integer constants on the leaves.
+The intermediate representation have the structure of a $n$-ary tree having the non-terminals of the grammar as internal nodes and commands, identifiers and constants on the leaves.
 
 The \textbf{optimizer} takes in input the intermediate representation given by the parser.
 The result of the optimizer is an \textit{optimized} intermediate representation.
@@ -69,7 +69,65 @@ The optimizer also checks for empty command blocks and useless branch statements
 
 The \textbf{interpreter} execute the semantics present in an intermediate representation.
 The basic idea is to use a \textbf{state} (or environment) that collects the values of the variables during the execution of the program.
-The result of the interpretation is the resulting state, that is a set of ground integer assignments to the variables.
+The result of the interpretation is the resulting state, that is a set of ground assignments to the variables.
+The variables can be either of type integer, boolean or array of fixed size of integers.
+
+\section*{Functors, Applicatives and Monads}
+Before introducing the syntax of the programming language, let's introduce three useful classes that are widely used in the construction of an interpreter.
+These classes are defined on ``wrapped'' types, such as \texttt{Maybe}.
+
+The \texttt{Functor} class defines the \texttt{fmap} function.
+The \texttt{fmap} function takes in input a simple function \texttt{a -> b} and an object of type \texttt{a} wrapped inside the functor \texttt{f}.
+The result of the \texttt{fmap} function is the application of the function to the ``unwrapped'' object inside \texttt{f}.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+\end{lstlisting}
+
+The \texttt{Applicative} class can be used only if \texttt{Functor} is already implemented for that polymorphic data type.
+It defines a function named \texttt{pure} and the \texttt{<*>} operator.
+The \texttt{pure} function simply takes in input an object and wraps it into an applicative \texttt{f}.
+The \texttt{<*>} operator is more complex.
+It takes in input a function \texttt{a -> b} wrapped in an applicative \texttt{f} and an object of type \texttt{a} wrapped inside the applicative \texttt{f}.
+The result of the \texttt{<*>} operator is the application of the ``unwrapped'' function to the ``unwrapped'' object inside \texttt{f}.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+class (Functor f) => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+\end{lstlisting}
+
+The last important class is the \texttt{Monad} class.
+The \texttt{Monad} class can be used only if \texttt{Applicative} is already implemented for that polymorphic data type.
+It defines a function named \texttt{return} and the \texttt{bind} operator.
+The \texttt{return} function is very similar to the \texttt{pure} function defined for \texttt{Applicative}s.
+The difference is that \texttt{return} gives an object wrapped inside a \texttt{Monad} while \texttt{pure} gives an object wrapped inside an \texttt{Applicative}.
+Often, their implementation is equivalent.
+The \texttt{bind} operator is denoted with \texttt{>>=} and takes in input an object of type \texttt{a} wrapped inside the monad \texttt{m} and a function \texttt{a -> m b}.
+The result of the \texttt{bind} operator is application of the function to the ``unwrapped'' object inside \texttt{m}.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+class (Applicative m) => Monad m where
+  return :: a -> m a
+  return = pure
+  (>>=) :: m a -> (a -> m b) -> m b
+\end{lstlisting}
+The \texttt{Monad} class is very useful because it's possible to \textit{emulate} the behavior of an imperative programming language inside Haskell, a purely functional programming language.
+That is, the following code snippet ...
+\begin{lstlisting}[language=Haskell, style=custom-style]
+m1 >>= \a1 ->
+  m2 >>= \a2 ->
+    ...
+      mn >>= \an ->
+        f a1 a2 ... an
+\end{lstlisting}
+... can be simplified using the \texttt{do} construct, as in a imperative programming language.
+\begin{lstlisting}[language=Haskell, style=custom-style]
+do
+  a1 <- m1
+  a2 <- m2
+  ...
+  an <- mn
+  f a1 a2 ... an
+\end{lstlisting}
 
 \section*{The Language Syntax}
 The syntax for the \textbf{Shrimp} programming language is a context-free grammar.
@@ -448,10 +506,13 @@ parse cs = case unwrap program cs of
 \section*{The Optimizer}
 The \textit{optimization} process is an intermediate step between the parsing and the interpretation of the program itself.
 Currently, the main optimization step is related to the execution of constant values.
-That is, if an expression in a loop is defined only on constant values, it's better to optimize the computation of that expression by replacing it with the result.
+That is, if an expression in a loop is defined only on constant values, it's better to optimize the computation of that expression by replacing it with its constant result.
 This procedure is done before the interpretation of the program.
+The implementation of the \textit{optimization} step in Haskell is straightforward, due to simple recursion functions.
+
 For example, consider the following arithmetic expression, expressed in intermediate representation, that we wish to optimize.
 If we apply the optimization step to this arithmetic expression, we obtain the equivalent but more efficient arithmetic expression.
+A very similar optimization process is also implemented on boolean expressions.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 let expr = Div (
     (Mul (Identifier "x") (Sub (Constant 5) (Constant 3)))
@@ -460,9 +521,8 @@ let expr = Div (
 \begin{lstlisting}[language=Haskell, style=custom-style]
 let expr' = Div (Mul (Identifier "x") (Constant 2)) (Constant 10)
 \end{lstlisting}
-The implementation of the \textit{optimization} process in Haskell is straightforward, due to simple recursion functions.
-A very similar optimization process is also implemented on boolean expressions.
-The \textit{optimization} process also includes a basic optimization on commands such as \texttt{skip}, \texttt{if-then-else} and \texttt{while-do}.
+
+The \textit{optimization} process also includes a basic optimization on commands such as \texttt{skip}, \texttt{if-then-else} and \texttt{while-do} statements.
 First of all, all the \texttt{skip} commands are removed from the intermediate representation.
 Moreover, if the condition of a \texttt{if-then-else} command is always \textit{true} then the entire statement is replaced with the first block of commands.
 In a similar way, if the condition is always \textit{false} then the entire statement is replaced with the second block of commands.
@@ -481,16 +541,17 @@ let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 1)
               [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
 \end{lstlisting}
 \begin{lstlisting}[language=Haskell, style=custom-style]
-let command' = []
+let command' = Skip
 \end{lstlisting}
-However, if the condition is always \textit{true} then an exception named \textit{Infinite Loop} is raised.
+However, if the condition is always \textit{true}, an exception named \textit{Infinite Loop} is raised.
 In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
-For example, the following loop program's intermediate representation is not interpreted.
-That is, an \textit{Infinite Loop} exception is raised during the optimization step.
+For example, the following loop program's intermediate representation is not interpreted, because the \textit{Infinite Loop} exception is raised \textit{before} the interpretation step.
 \begin{lstlisting}[language=Haskell, style=custom-style]
 let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 0)
               [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
 \end{lstlisting}
+
+These kinds of code optimizations are very basic and don't consider the \textit{expected state} of the program at a certain point, in order to apply more advanced kinds of optimizations (such as expressions simplification or variables pruning).
 
 \clearpage
 
