@@ -447,8 +447,8 @@ loop = do
 
 skip :: Parser Command
 skip = do
-    keyword "skip"
-    return Skip
+  keyword "skip"
+  return Skip
 \end{lstlisting}
 Another parser that is needed for the grammar, is the parser for the variable declarations.
 That is, in this programming language we can declare variables only on the top of the program, and before the \texttt{shrimp} keyword.
