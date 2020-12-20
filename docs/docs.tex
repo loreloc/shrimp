@@ -141,7 +141,7 @@ Block ::= [Command]*
 
 Variable ::= "let" Identifier "as" Type ";"
 Type ::= {"int" | "bool" | "array" "[" Integer "]"}
-Command ::= {Assignment | Branch | Loop} ";"
+Command ::= {Assignment | Branch | Loop | Skip} ";"
 
 Assignment ::= Identifier
   { "=" ArithmeticExpr
@@ -150,8 +150,8 @@ Assignment ::= Identifier
   }
 
 Branch ::= "if" "(" BooleanExpr ")" "then" Block ["else" Block] "end"
-
 Loop ::= "while" "(" BooleanExpr ")" "do" Block "end"
+Skip ::= "skip"
 
 ArithmeticExpr ::= ArithmeticTerm
                    [{"+" | "-"} ArithmeticTerm]*
