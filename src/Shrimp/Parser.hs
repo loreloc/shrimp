@@ -155,7 +155,12 @@ isLetter c
 
 -- | Parse a program
 program :: Parser Program
-program = do h <- header; keyword "shrimp"; symbol ';'; b <- block; return (h, b)
+program = do
+  h <- header
+  keyword "shrimp"
+  symbol ';'
+  b <- block
+  return (h, b)
 
 -- | Parse a command block
 block :: Parser Block
@@ -171,25 +176,26 @@ variable = do
   keyword "let"
   d <- identifier
   keyword "as"
-  do
-    keyword "int"
-    symbol ';'
-    return (IntegerDecl d)
-    <|> do
-      keyword "bool"
-      symbol ';'
-      return (BooleanDecl d)
-    <|> do
-      keyword "array"
-      symbol '['
-      n <- constant
-      symbol ']'
-      symbol ';'
-      return (ArrayDecl d n)
+  v <- var
+  symbol ';'
+  return (v d)
+  where
+    var =
+      do keyword "int"; return IntegerDecl
+        <|> do keyword "bool"; return BooleanDecl
+        <|> do
+          keyword "array"
+          symbol '['
+          n <- constant
+          symbol ']'
+          return (`ArrayDecl` n)
 
 -- | Parse a command
 command :: Parser Command
-command = assignment <|> branch <|> loop <|> skip
+command = do
+  c <- assignment <|> branch <|> loop <|> skip
+  symbol ';'
+  return c
 
 -- | Parse an assignment command
 assignment :: Parser Command
@@ -197,22 +203,16 @@ assignment = do
   d <- identifier
   do
     symbol '='
-    a <- arithmeticExpr
-    symbol ';'
-    return (ArithmeticAssignment d a)
+    ArithmeticAssignment d <$> arithmeticExpr
     <|> do
       symbol '='
-      b <- booleanExpr
-      symbol ';'
-      return (BooleanAssignment d b)
+      BooleanAssignment d <$> booleanExpr
     <|> do
       symbol '['
       k <- arithmeticExpr
       symbol ']'
       symbol '='
-      a <- arithmeticExpr
-      symbol ';'
-      return (ArrayAssignment d k a)
+      ArrayAssignment d k <$> arithmeticExpr
 
 -- | Parse a branch command
 branch :: Parser Command
@@ -227,11 +227,9 @@ branch = do
     keyword "else"
     c2 <- block
     keyword "end"
-    symbol ';'
     return (Branch b c1 c2)
     <|> do
       keyword "end"
-      symbol ';'
       return (Branch b c1 [Skip])
 
 -- | Parse a loop command
@@ -244,12 +242,11 @@ loop = do
   keyword "do"
   c <- block
   keyword "end"
-  symbol ';'
   return (Loop b c)
 
 -- | Parse a skip command
 skip :: Parser Command
-skip = do keyword "skip"; symbol ';'; return Skip
+skip = do keyword "skip"; return Skip
 
 -- | Parse an arithmetic expression
 arithmeticExpr :: Parser ArithmeticExpr

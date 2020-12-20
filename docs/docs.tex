@@ -135,23 +135,23 @@ So, it can be denoted using some kind of EBNF (Extended Backus Naur Form) as fol
 \begin{lstlisting}[language=C, style=custom-style]
 Integer ::= [0-9]+
 Identifier ::= [a-zA-Z_]+ \ Keyword
-Program ::= Header "shrimp" Block
-Header ::= [VariableDecl]*
+Program ::= Header "shrimp" ";" Block
+Header ::= [Variable]*
 Block ::= [Command]*
 
-VariableDecl ::= "let" Identifier "as" Type
+Variable ::= "let" Identifier "as" Type ";"
 Type ::= {"int" | "bool" | "array" "[" Integer "]"}
-Command ::= {Assignment | Branch | Loop}
+Command ::= {Assignment | Branch | Loop} ";"
 
 Assignment ::= Identifier
-             {"=" ArithmeticExpr | "=" BooleanExpr |
-              "[" ArithmeticExpr "]" "=" ArithmeticExpr} ";"
+  { "=" ArithmeticExpr
+  | "=" BooleanExpr
+  | "[" ArithmeticExpr "]" "=" ArithmeticExpr
+  }
 
-Branch ::= "if" "(" BooleanExpr ")" "then"
-           Block ["else" Block] "end" ";"
+Branch ::= "if" "(" BooleanExpr ")" "then" Block ["else" Block] "end"
 
-Loop ::= "while" "(" BooleanExpr ")" "do"
-         Block "end" ";"
+Loop ::= "while" "(" BooleanExpr ")" "do" Block "end"
 
 ArithmeticExpr ::= ArithmeticTerm
                    [{"+" | "-"} ArithmeticTerm]*
@@ -395,27 +395,27 @@ It's important to notice that the grammar also allows for \texttt{if-then} state
 A parser that works on both \texttt{if-then-else} and \texttt{if-then} statements is implemented by combining the two individual parsers using the \texttt{<|>} operator.
 Moreover, using the \texttt{many} combinator and the \texttt{<|>} operator, the parsers for both multiple commands and a single command are straightforward.
 \begin{lstlisting}[language=Haskell, style=custom-style]
+command :: Parser Command
+command = do
+  c <- assignment <|> branch <|> loop <|> skip
+  symbol ';'
+  return c
+
 assignment :: Parser Command
 assignment = do
   d <- identifier
   do
     symbol '='
-    a <- arithmeticExpr
-    symbol ';'
-    return (ArithmeticAssignment d a)
+    ArithmeticAssignment d <$> arithmeticExpr
     <|> do
       symbol '='
-      b <- booleanExpr
-      symbol ';'
-      return (BooleanAssignment d b)
+      BooleanAssignment d <$> booleanExpr
     <|> do
       symbol '['
       k <- arithmeticExpr
       symbol ']'
       symbol '='
-      a <- arithmeticExpr
-      symbol ';'
-      return (ArrayAssignment d k a)
+      ArrayAssignment d k <$> arithmeticExpr
 
 branch :: Parser Command
 branch = do
@@ -429,12 +429,10 @@ branch = do
     keyword "else"
     c2 <- block
     keyword "end"
-    symbol ';'
     return (Branch b c1 c2)
-  <|> do
-    keyword "end"
-    symbol ';'
-    return (Branch b c1 [Skip])
+    <|> do
+      keyword "end"
+      return (Branch b c1 [Skip])
 
 loop :: Parser Command
 loop = do
@@ -445,11 +443,12 @@ loop = do
   keyword "do"
   c <- block
   keyword "end"
-  symbol ';'
   return (Loop b c)
 
 skip :: Parser Command
-skip = do keyword "skip"; symbol ';'; return Skip
+skip = do
+    keyword "skip"
+    return Skip
 \end{lstlisting}
 Another parser that is needed for the grammar, is the parser for the variable declarations.
 That is, in this programming language we can declare variables only on the top of the program, and before the \texttt{shrimp} keyword.
@@ -461,21 +460,19 @@ variable = do
   keyword "let"
   d <- identifier
   keyword "as"
-  do
-    keyword "int"
-    symbol ';'
-    return (IntegerDecl d)
-    <|> do
-      keyword "bool"
-      symbol ';'
-      return (BooleanDecl d)
-    <|> do
-      keyword "array"
-      symbol '['
-      n <- constant
-      symbol ']'
-      symbol ';'
-      return (ArrayDecl d n)
+  v <- var
+  symbol ';'
+  return (v d)
+  where
+    var =
+      do keyword "int"; return IntegerDecl
+        <|> do keyword "bool"; return BooleanDecl
+        <|> do
+          keyword "array"
+          symbol '['
+          n <- constant
+          symbol ']'
+          return (`ArrayDecl` n)
 \end{lstlisting}
 The parser for the entire program is defined as in the following code snippet.
 That is, the parser for a block of commands is defined using the \texttt{many} combinator on the parser for a \texttt{command}.
@@ -502,6 +499,8 @@ parse cs = case unwrap program cs of
   [] -> Error EmptyProgram
   [(p, cs)] -> Ok (p, cs)
 \end{lstlisting}
+
+\clearpage
 
 \section*{The Optimizer}
 The \textit{optimization} process is an intermediate step between the parsing and the interpretation of the program itself.
