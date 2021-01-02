@@ -145,7 +145,7 @@ Command ::= {Assignment | Branch | Loop | Skip} ";"
 
 Assignment ::= Identifier
   { "=" ArithmeticExpr
-  | "=" BooleanExpr
+  | "<-" BooleanExpr
   | "[" ArithmeticExpr "]" "=" ArithmeticExpr
   }
 
@@ -408,7 +408,7 @@ assignment = do
     symbol '='
     ArithmeticAssignment d <$> arithmeticExpr
     <|> do
-      symbol '='
+      keyword '<-'
       BooleanAssignment d <$> booleanExpr
     <|> do
       symbol '['
