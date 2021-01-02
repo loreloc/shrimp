@@ -682,7 +682,7 @@ execute s ((Branch b cs' cs'') : cs) =
     Ok False -> execute s (cs'' ++ cs)
     Error e -> exception e
 execute s (c@(Loop b cs') : cs) =
-execute s (Branch b (cs' ++ [c]) [Skip] : cs)
+  execute s (Branch b (cs' ++ [c]) [Skip] : cs)
 \end{lstlisting}
 The implementation of the evaluation of arithmetic expressions make \textit{heavily} use of the methods exposed by the applicative interface.
 Moreover, the \texttt{liftA2} function is used in order to make the evaluation functions implementation more compact and readable.
