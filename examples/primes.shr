@@ -12,12 +12,12 @@ primes[0] = 2;
 while (i lt 15)
 do
     j = i - 1;
-    stop = false;
+    stop <- false;
     while (j gt 0 and not stop)
     do
         if (n % primes[j] eq 0)
         then
-            stop = true;
+            stop <- true;
         else
             j = j - 1;
         end;

@@ -205,7 +205,7 @@ assignment = do
     symbol '='
     ArithmeticAssignment d <$> arithmeticExpr
     <|> do
-      symbol '='
+      keyword "<-"
       BooleanAssignment d <$> booleanExpr
     <|> do
       symbol '['
