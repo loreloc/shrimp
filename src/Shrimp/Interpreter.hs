@@ -116,9 +116,9 @@ evalArithmetic _ (Constant v) = Ok v
 evalArithmetic s (IntegerVar d) =
   case search d s of
     Just (IntegerValue v) -> Ok v
-    Just (BooleanValue _) -> exception (TypeMismatch d)
-    Just (ArrayValue _) -> exception (TypeMismatch d)
-    Nothing -> exception (UndeclaredVariable d)
+    Just (BooleanValue _) -> Error (TypeMismatch d)
+    Just (ArrayValue _) -> Error (TypeMismatch d)
+    Nothing -> Error (UndeclaredVariable d)
 evalArithmetic s (ArrayVar d k) =
   case search d s of
     Just (ArrayValue vs) ->
@@ -127,10 +127,10 @@ evalArithmetic s (ArrayVar d k) =
           case readArray i vs of
             Just v -> Ok v
             Nothing -> Error (OutOfBound d i)
-        Error e -> exception e
-    Just (IntegerValue _) -> exception (TypeMismatch d)
-    Just (BooleanValue _) -> exception (TypeMismatch d)
-    Nothing -> exception (UndeclaredVariable d)
+        Error e -> Error e
+    Just (IntegerValue _) -> Error (TypeMismatch d)
+    Just (BooleanValue _) -> Error (TypeMismatch d)
+    Nothing -> Error (UndeclaredVariable d)
 evalArithmetic s (Add a1 a2) = liftA2 (+) v1 v2
   where
     v1 = evalArithmetic s a1
@@ -160,10 +160,10 @@ evalBoolean :: State -> BooleanExpr -> Result Bool
 evalBoolean _ (Truth t) = Ok t
 evalBoolean s (BooleanVar d) =
   case search d s of
-    Just (IntegerValue _) -> exception $ TypeMismatch d
+    Just (IntegerValue _) -> Error (TypeMismatch d)
     Just (BooleanValue t) -> Ok t
-    Just (ArrayValue _) -> exception $ TypeMismatch d
-    Nothing -> exception (UndeclaredVariable d)
+    Just (ArrayValue _) -> Error (TypeMismatch d)
+    Nothing -> Error (UndeclaredVariable d)
 evalBoolean s (Not b) = not <$> evalBoolean s b
 evalBoolean s (Or b1 b2) = liftA2 (||) t1 t2
   where
