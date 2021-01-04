@@ -526,7 +526,7 @@ First of all, all the \texttt{skip} commands are removed from the intermediate r
 Moreover, if the condition of a \texttt{if-then-else} command is always \textit{true} then the entire statement is replaced with the first block of commands.
 In a similar way, if the condition is always \textit{false} then the entire statement is replaced with the second block of commands.
 \begin{lstlisting}[language=Haskell, style=custom-style]
-let command = Branch (Equal (Sub (Constant 1) (Constant 1)) 0)
+let command = Branch (Equal (Sub (Constant 1) (Constant 1)) (Constant 0))
               [Assignment "x" (Constant 1)]
               [Assignment "x" (Constant 2)]
 \end{lstlisting}
@@ -536,7 +536,7 @@ let command' = [Assignment "x" (Constant 1)]
 Furthermore, this approach is also used for \texttt{while-do} commands.
 That is, if the condition of a \texttt{while-do} command is always \textit{false} then the entire statement is completely removed.
 \begin{lstlisting}[language=Haskell, style=custom-style]
-let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 1)
+let command = Loop (Equal (Sub (Constant 1) (Constant 1)) (Constant 1))
               [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
 \end{lstlisting}
 \begin{lstlisting}[language=Haskell, style=custom-style]
@@ -546,7 +546,7 @@ However, if the condition is always \textit{true}, an exception named \textit{In
 In other words, the optimizer is capable of detecting trivial infinite loops and prevents the interpretation of such programs.
 For example, the following loop program's intermediate representation is not interpreted, because the \textit{Infinite Loop} exception is raised \textit{before} the interpretation step.
 \begin{lstlisting}[language=Haskell, style=custom-style]
-let command = Loop (Equal (Sub (Constant 1) (Constant 1)) 0)
+let command = Loop (Equal (Sub (Constant 1) (Constant 1)) (Constant 0))
               [Assignment "x" (Add (IntegerVar "x") (Constant 1))]
 \end{lstlisting}
 
